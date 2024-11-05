@@ -2,7 +2,6 @@ package com.example.munch_cmpt362.Api
 
 import android.util.Log
 import com.example.munch_cmpt362.BuildConfig
-import com.example.munch_cmpt362.SwipeFragment.RestaurantAdapter
 import com.example.munch_cmpt362.YelpResponse
 import com.example.munch_cmpt362.YelpService
 import okhttp3.OkHttpClient
@@ -31,6 +30,7 @@ object ApiHelper {
         call.enqueue(object : Callback<YelpResponse> {
             override fun onResponse(call: Call<YelpResponse>, response: Response<YelpResponse>) {
                 if (response.isSuccessful) {
+                    Log.e("Yelp Search Api", "Body: ${response.body()}")
                     onResult(response.body())
                 } else {
                     Log.e("Yelp Nearby Api", "Error: ${response.code()}")
@@ -62,6 +62,7 @@ object ApiHelper {
         call.enqueue(object : Callback<YelpResponse> {
             override fun onResponse(call: Call<YelpResponse>, response: Response<YelpResponse>) {
                 if (response.isSuccessful) {
+                    Log.e("Yelp Search Api", "Body: ${response.body()}")
                     onResult(response.body())
                 } else {
                     Log.e("Yelp Search Api", "Error: ${response.code()}")
@@ -78,9 +79,9 @@ object ApiHelper {
 
     /* how to use
     private fun searchRestaurantsByInput(term: String, latitude: Double, longitude: Double) {
-    ApiHelper.searchYelpRestaurants(term, latitude, longitude) { response ->
+    ApiHelper.searchYelpRestaurantsApi(term, latitude, longitude) { response ->
         response?.businesses?.let {
-            val restaurantAdapter = RestaurantAdapter(it)
+            restaurantAdapter = RestaurantAdapter(it)
             cardStackView.adapter = restaurantAdapter
         } ?: Log.e("SwipeFragment", "Failed to retrieve search results")
     }

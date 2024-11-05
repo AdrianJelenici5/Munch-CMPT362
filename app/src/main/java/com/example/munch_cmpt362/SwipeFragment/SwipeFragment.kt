@@ -48,16 +48,18 @@ class SwipeFragment : Fragment() {
 
     private fun fetchNearbyRestaurants(latitude: Double, longitude: Double) {
         ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
-//            if (response?.businesses != null) {
-//                val restaurantAdapter = RestaurantAdapter(response.businesses)
-//                cardStackView.adapter = restaurantAdapter
-//                noMoreRestaurantsText.visibility = View.GONE
-//            } else {
-//                Log.e("SwipeFragment", "Failed to retrieve businesses or response is null")
-//                noMoreRestaurantsText.visibility = View.VISIBLE
-//            }
-            loadFakeBusinesses()
+            if (response?.businesses != null) {
+                Log.d("SwipeFragment", "${response.businesses}")
+                restaurantAdapter = RestaurantAdapter(response.businesses)
+                cardStackView.adapter = restaurantAdapter
+            } else {
+                Log.e("SwipeFragment", "Failed to retrieve businesses or response is null")
+                noMoreRestaurantsText.visibility = View.VISIBLE
+            }
         }
+        /*
+        loadFakeBusinesses()
+         */
     }
 
     fun updateLocation(latitude: Double, longitude: Double) {
