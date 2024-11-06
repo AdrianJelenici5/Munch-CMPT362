@@ -1,20 +1,20 @@
 package com.example.munch_cmpt362
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.example.munch_cmpt362.group.GroupFragment
 
 class MainActivity : AppCompatActivity() {
+    private val groupTAG = "group tag"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        //setContentView(R.layout.activity_main)
+
+        // Start the GROUP fragment
+        if(supportFragmentManager.findFragmentByTag(groupTAG) == null) {
+            val groupFragment = GroupFragment()
+            supportFragmentManager.beginTransaction().add(android.R.id.content, groupFragment, groupTAG)
+                .commit()
         }
     }
 }
