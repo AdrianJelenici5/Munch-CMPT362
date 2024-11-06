@@ -56,4 +56,5 @@ class AuthRepository @Inject constructor(
     fun isUserLoggedIn(): Boolean {
         return auth.currentUser != null
     }
+
 }

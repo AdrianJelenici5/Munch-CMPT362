@@ -8,13 +8,13 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.SwipeFragment.SwipeFragment
+import com.example.munch_cmpt362.ui.swipe.SwipeFragment
 import com.example.munch_cmpt362.ui.adapter.MyFragmentStateAdapter
+import com.example.munch_cmpt362.ui.profile.ProfileFragment
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,12 +22,13 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
     private lateinit var swipeFragment: SwipeFragment
+    private lateinit var profileFragment: ProfileFragment
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var myMyFragmentStateAdapter: MyFragmentStateAdapter
     private lateinit var locationManager: LocationManager
     private val PERMISSION_REQUEST_CODE = 0
-    private val tabTitles = arrayOf("Swipe", "temp1", "temp2")
+    private val tabTitles = arrayOf("Swipe", "Profile", "temp2")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -36,8 +37,9 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
         viewPager.isUserInputEnabled = false
         tabLayout = view.findViewById(R.id.tab)
 
+        profileFragment = ProfileFragment()
         swipeFragment = SwipeFragment()
-        val fragments = arrayListOf<Fragment>(swipeFragment)
+        val fragments = arrayListOf<Fragment>(swipeFragment, profileFragment)
 
         myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter

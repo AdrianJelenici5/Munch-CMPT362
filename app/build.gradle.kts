@@ -68,6 +68,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.room.ktx)
     kapt(libs.hilt.compiler)
 
     // Play-Service

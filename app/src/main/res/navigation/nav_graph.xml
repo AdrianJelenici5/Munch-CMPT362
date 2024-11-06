@@ -49,4 +49,9 @@
         android:id="@+id/mainFragment"
         android:name="com.example.munch_cmpt362.ui.main.MainFragment"
         android:label="MainFragment" />
+        <action
+            android:id="@+id/action_main_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
 </navigation>

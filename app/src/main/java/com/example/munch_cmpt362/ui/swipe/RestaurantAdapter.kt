@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.SwipeFragment
+package com.example.munch_cmpt362.ui.swipe
 
 import android.content.Intent
 import android.net.Uri
