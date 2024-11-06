@@ -37,7 +37,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         }
 
         binding.tvSignUp.setOnClickListener {
-            Toast.makeText(requireContext(), "Sign up coming soon!", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_login_to_signup)
         }
     }
 
