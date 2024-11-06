@@ -1,5 +1,6 @@
-package com.example.munch_cmpt362
+package com.example.munch_cmpt362.data.remote.api
 
+import com.example.munch_cmpt362.YelpResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Header

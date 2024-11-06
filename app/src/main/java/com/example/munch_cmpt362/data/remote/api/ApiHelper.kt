@@ -1,9 +1,8 @@
-package com.example.munch_cmpt362.Api
+package com.example.munch_cmpt362.data.remote.api
 
 import android.util.Log
 import com.example.munch_cmpt362.BuildConfig
 import com.example.munch_cmpt362.YelpResponse
-import com.example.munch_cmpt362.YelpService
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback

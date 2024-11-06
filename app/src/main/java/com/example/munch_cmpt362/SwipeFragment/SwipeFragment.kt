@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import com.example.munch_cmpt362.Api.ApiHelper
+import com.example.munch_cmpt362.data.remote.api.ApiHelper
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.Category
 import com.example.munch_cmpt362.Location

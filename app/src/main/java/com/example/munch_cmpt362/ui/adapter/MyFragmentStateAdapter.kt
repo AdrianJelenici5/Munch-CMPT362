@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362
+package com.example.munch_cmpt362.ui.adapter
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
