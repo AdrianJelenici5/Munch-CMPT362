@@ -30,7 +30,7 @@ class GroupFragment: Fragment() {
     private lateinit var myGroupListAdapter: GroupListAdapter
     private lateinit var groupDatabase: GroupDatabase
     private lateinit var groupDatabaseDao: GroupDatabaseDao
-    private lateinit var groupViewModel: GroupViewModel
+    lateinit var groupViewModel: GroupViewModel
     private lateinit var groupRepository: GroupRepository
     private lateinit var groupViewModelFactory: GroupViewModelFactory
 
@@ -40,7 +40,6 @@ class GroupFragment: Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.group_fragment, container, false)
-
 
         myGroupListView = view.findViewById(R.id.group_list)
         addGroupButton = view.findViewById(R.id.add_group)
@@ -53,7 +52,6 @@ class GroupFragment: Fragment() {
         groupDatabaseDao = groupDatabase.groupDatabaseDao
         // get our User and stub into database
         var user = User()
-        user.userID = 0L
         user.userName = "Gabriel"
         CoroutineScope(IO).launch {
             groupDatabaseDao.insertStubUser(user)
@@ -69,12 +67,12 @@ class GroupFragment: Fragment() {
         }
 
         addGroupButton.setOnClickListener(){
-            Toast.makeText(requireActivity(), "TESTING BUTTON", Toast.LENGTH_SHORT).show()
-            // stub add group
-            var group = Group()
-            group.userID = 1L
-            group.groupName = "HAHA"
-            groupViewModel.insertGroup(group)
+            val addGroupDialog = AddGroupDialog()
+            addGroupDialog.show(parentFragmentManager, "add group")
+        }
+
+        myGroupListView.setOnItemClickListener(){ parent, view, position, id ->
+            Toast.makeText(requireActivity(), "Stub to display members", Toast.LENGTH_SHORT).show()
         }
 
 
