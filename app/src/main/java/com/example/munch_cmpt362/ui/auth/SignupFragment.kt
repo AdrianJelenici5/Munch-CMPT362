@@ -63,7 +63,7 @@ class SignupFragment : Fragment(R.layout.fragment_signup) {
         viewModel.registerResult.observe(viewLifecycleOwner) { result ->
             result.fold(
                 onSuccess = {
-                    findNavController().navigate(R.id.action_signup_to_main)
+                    findNavController().navigate(R.id.action_signup_to_login)
                 },
                 onFailure = { exception ->
                     Toast.makeText(

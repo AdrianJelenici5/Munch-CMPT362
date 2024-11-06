@@ -39,8 +39,8 @@
         android:name="com.example.munch_cmpt362.ui.auth.SignupFragment"
         android:label="SignupFragment">
         <action
-            android:id="@+id/action_signup_to_main"
-            app:destination="@id/mainFragment"
+            android:id="@+id/action_signup_to_login"
+            app:destination="@id/loginFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
     </fragment>
