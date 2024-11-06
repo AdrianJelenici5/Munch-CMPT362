@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.ui
+package com.example.munch_cmpt362.ui.main
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -7,7 +7,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -17,8 +17,10 @@ import com.example.munch_cmpt362.SwipeFragment.SwipeFragment
 import com.example.munch_cmpt362.ui.adapter.MyFragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : AppCompatActivity(), LocationListener {
+@AndroidEntryPoint
+class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
     private lateinit var swipeFragment: SwipeFragment
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
@@ -27,18 +29,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private val PERMISSION_REQUEST_CODE = 0
     private val tabTitles = arrayOf("Swipe", "temp1", "temp2")
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        viewPager = findViewById(R.id.viewpager)
-        viewPager.setUserInputEnabled(false);
-        tabLayout = findViewById(R.id.tab)
+        viewPager = view.findViewById(R.id.viewpager)
+        viewPager.isUserInputEnabled = false
+        tabLayout = view.findViewById(R.id.tab)
 
         swipeFragment = SwipeFragment()
         val fragments = arrayListOf<Fragment>(swipeFragment)
 
-        myMyFragmentStateAdapter = MyFragmentStateAdapter(this, fragments)
+        myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
@@ -53,11 +54,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
             initLocationManager()
             return
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CODE
+            requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSION_REQUEST_CODE
             )
         } else {
             initLocationManager()
@@ -66,7 +68,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun initLocationManager() {
         try {
-            locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+            locationManager = requireContext().getSystemService(android.content.Context.LOCATION_SERVICE) as LocationManager
 
             if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) return
 
@@ -92,8 +94,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         if (::locationManager.isInitialized) {
             locationManager.removeUpdates(this)
         }

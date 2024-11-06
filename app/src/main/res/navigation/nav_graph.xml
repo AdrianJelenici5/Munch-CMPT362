@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/splashFragment"
-        android:name="com.group12.munch.ui.splash.SplashFragment"
+        android:name="com.example.munch_cmpt362.ui.splash.SplashFragment"
         android:label="SplashFragment">
         <action
             android:id="@+id/action_splash_to_login"
@@ -22,7 +22,7 @@
 
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.group12.munch.ui.auth.LoginFragment"
+        android:name="com.example.munch_cmpt362.ui.auth.LoginFragment"
         android:label="LoginFragment">
         <action
             android:id="@+id/action_login_to_main"
@@ -33,6 +33,6 @@
 
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.group12.munch.ui.main.MainFragment"
+        android:name="com.example.munch_cmpt362.ui.main.MainFragment"
         android:label="MainFragment" />
 </navigation>
