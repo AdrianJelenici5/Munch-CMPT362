@@ -3,13 +3,16 @@ package com.example.munch_cmpt362
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.munch_cmpt362.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 
+
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
 
@@ -30,7 +33,7 @@ class MainActivity : AppCompatActivity() {
                     // Clear the back stack when reaching the main fragment
                     navController.popBackStack(R.id.splashFragment, true)
                 }
-            }
+
         }
     }
 
