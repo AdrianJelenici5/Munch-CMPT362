@@ -1,7 +1,6 @@
 package com.example.munch_cmpt362.group.datadaoview
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
@@ -33,6 +32,18 @@ class GroupViewModel(private val groupRepository: GroupRepository): ViewModel() 
 
     fun getUser(userID: Long){
         groupRepository.getUser(userID)
+    }
+
+    fun insertCounter(counter: Counter){
+        groupRepository.insertCounter(counter)
+    }
+
+    fun getCounter(){
+        groupRepository.getCounter()
+    }
+
+    fun deleteCounter(num: Long){
+        groupRepository.deleteCounter(num)
     }
 }
 

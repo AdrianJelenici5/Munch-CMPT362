@@ -1,11 +1,13 @@
 package com.example.munch_cmpt362.group
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ListView
+import androidx.annotation.UiThread
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.munch_cmpt362.R
@@ -18,7 +20,6 @@ import com.example.munch_cmpt362.group.datadaoview.GroupViewModelFactory
 import com.example.munch_cmpt362.group.datadaoview.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class GroupMembersFragment: Fragment() {
@@ -27,7 +28,7 @@ class GroupMembersFragment: Fragment() {
     private lateinit var myGroupMemberListView: ListView
 
     private lateinit var groupMemberList: ArrayList<User>
-    private lateinit var myGroupMemberListAdapter: GroupMemberListAdapter
+    lateinit var myGroupMemberListAdapter: GroupMemberListAdapter
     private lateinit var groupDatabase: GroupDatabase
     private lateinit var groupDatabaseDao: GroupDatabaseDao
     lateinit var groupViewModel: GroupViewModel
@@ -35,7 +36,7 @@ class GroupMembersFragment: Fragment() {
     private lateinit var groupViewModelFactory: GroupViewModelFactory
 
     private var STUB_USER_ID = 1L
-    private var STUB_GROUP_ID = 1L
+    //private var STUB_GROUP_ID = 1L
 
     private lateinit var allUserGroupMembers: List<User>
     lateinit var group: Group
@@ -61,22 +62,33 @@ class GroupMembersFragment: Fragment() {
         groupRepository = GroupRepository(groupDatabaseDao, STUB_USER_ID)
         groupViewModelFactory = GroupViewModelFactory(groupRepository)
         groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(GroupViewModel::class.java)
-        CoroutineScope(IO).launch{
-            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(STUB_GROUP_ID)
-            println("THIS IS GROUP: $allUserGroupMembers")
-            myGroupMemberListAdapter.replace(allUserGroupMembers)
-            myGroupMemberListAdapter.notifyDataSetChanged()
-            }
+        updateMembers()
 
-
+        // Pressing add members button
         addGroupMemberButton.setOnClickListener(){
             groupViewModel.currentGroupAdding = group
             val addGroupMemberDialog = AddGroupMemberDialog()
             addGroupMemberDialog.show(parentFragmentManager, "add group member")
+
+            // wait
+            parentFragmentManager.executePendingTransactions()
+            addGroupMemberDialog.dialog?.setOnDismissListener {
+                updateMembers()
+            }
         }
 
         return view
     }
 
+    fun updateMembers(){
+        CoroutineScope(IO).launch{
+            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(group.groupID)
+            println("THIS IS GROUP: $allUserGroupMembers")
+            activity?.runOnUiThread(){
+                myGroupMemberListAdapter.replace(allUserGroupMembers)
+                myGroupMemberListAdapter.notifyDataSetChanged()
+            }
+        }
+    }
 
 }

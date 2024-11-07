@@ -1,5 +1,7 @@
 package com.example.munch_cmpt362.group.datadaoview
 
+import androidx.room.Insert
+import androidx.room.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +50,24 @@ class GroupRepository (private val groupDatabaseDao: GroupDatabaseDao, private v
     fun getAllUsersInGroup(groupID: Long){
         CoroutineScope(IO).launch{
             groupDatabaseDao.getAllUsersInGroup(groupID)
+        }
+    }
+
+    fun insertCounter(counter: Counter){
+        CoroutineScope(IO).launch{
+            groupDatabaseDao.insertCounter(counter)
+        }
+    }
+
+    fun getCounter(){
+        CoroutineScope(IO).launch{
+            groupDatabaseDao.getCounter()
+        }
+    }
+
+    fun deleteCounter(num: Long){
+        CoroutineScope(IO).launch{
+            groupDatabaseDao.deleteCounter(num)
         }
     }
 

@@ -1,5 +1,6 @@
 package com.example.munch_cmpt362.group
 
+import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
@@ -17,8 +18,8 @@ class AddGroupMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
     private lateinit var editText: EditText
     private lateinit var groupViewModel: GroupViewModel
 
-    private var STUB_USER_ID = 1L
-    private var STUB_GROUP_ID = 1L
+//    private var STUB_USER_ID = 1L
+//    private var STUB_GROUP_ID = 1L
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         lateinit var ret: Dialog
@@ -26,6 +27,7 @@ class AddGroupMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
         val builder = AlertDialog.Builder(requireActivity())
         val view: View = requireActivity().layoutInflater.inflate(R.layout.add_group_dialog,null)
         editText = view.findViewById(R.id.add_group_edittext)
+        editText.hint = ("Add a member")
         builder.setView(view)
         builder.setTitle("Add Group Member")
         builder.setPositiveButton("ok", this)
@@ -45,11 +47,11 @@ class AddGroupMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
                 group.userID = editText.text.toString().toLong()
                 group.groupName = groupViewModel.currentGroupAdding.groupName
                 groupViewModel.insertGroup(group)
+                // Try to update list
             }
             Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()
         } else if (item == DialogInterface.BUTTON_NEGATIVE) {
             Toast.makeText(activity, "cancel clicked", Toast.LENGTH_LONG).show()
         }
     }
-
 }

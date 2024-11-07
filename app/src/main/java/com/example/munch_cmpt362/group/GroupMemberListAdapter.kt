@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.group.datadaoview.Group
 import com.example.munch_cmpt362.group.datadaoview.User
 
 class GroupMemberListAdapter(private val context: Context, private var groupMemberList: List<User>): BaseAdapter() {

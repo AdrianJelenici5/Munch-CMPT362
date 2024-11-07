@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.group.datadaoview.Counter
 import com.example.munch_cmpt362.group.datadaoview.Group
 import com.example.munch_cmpt362.group.datadaoview.GroupDatabase
 import com.example.munch_cmpt362.group.datadaoview.GroupDatabaseDao
@@ -74,6 +75,12 @@ class GroupFragment: Fragment() {
             myGroupListAdapter.notifyDataSetChanged()
         }
 
+        // Initialize counter
+        if(groupViewModel.getCounter() == null){
+            var counter = Counter()
+            groupViewModel.insertCounter(counter)
+        }
+
         addGroupButton.setOnClickListener(){
             val addGroupDialog = AddGroupDialog()
             addGroupDialog.show(parentFragmentManager, "add group")
@@ -93,5 +100,4 @@ class GroupFragment: Fragment() {
 
         return view
     }
-
 }

@@ -2,7 +2,6 @@ package com.example.munch_cmpt362
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import com.example.munch_cmpt362.group.GroupFragment
 
 class MainActivity : AppCompatActivity() {

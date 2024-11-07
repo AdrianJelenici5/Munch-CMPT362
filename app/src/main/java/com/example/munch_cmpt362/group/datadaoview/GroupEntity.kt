@@ -3,7 +3,6 @@ package com.example.munch_cmpt362.group.datadaoview
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
 // Sample user data
@@ -19,7 +18,7 @@ data class User (
 
 // Data for basic group information
 @Entity(tableName = "group_table",
-    //primaryKeys = ["groupID", "user_ID"],
+    primaryKeys = ["group_ID", "user_ID"],
     foreignKeys = [
         ForeignKey(
             entity = User::class,
@@ -32,7 +31,7 @@ data class User (
     ]
     )
 data class Group (
-    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "group_ID")
     var groupID: Long = 0L,
 
     @ColumnInfo(name = "user_ID")
@@ -46,4 +45,12 @@ data class Group (
 
     @ColumnInfo(name = "voting")
     var voting: Boolean = false
+)
+
+// Basic counter
+@Entity(tableName = "counter_table")
+data class Counter (
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "counter_num")
+    var counterNum: Long = 0L
 )
