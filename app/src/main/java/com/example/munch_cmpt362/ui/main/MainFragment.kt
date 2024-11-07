@@ -14,7 +14,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.ui.group.GroupFragment
 import com.example.munch_cmpt362.ui.swipe.SwipeFragment
-import com.example.munch_cmpt362.ui.adapter.MyFragmentStateAdapter
+import com.example.munch_cmpt362.ui.main.adapter.MyFragmentStateAdapter
 import com.example.munch_cmpt362.ui.profile.ProfileFragment
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
