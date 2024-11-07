@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // Have stub users
-@Database(entities = [User::class, Group::class], version = 2)
+@Database(entities = [User::class, Group::class], version = 4)
 abstract class GroupDatabase: RoomDatabase() {
     abstract val groupDatabaseDao: GroupDatabaseDao
 

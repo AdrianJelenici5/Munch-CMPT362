@@ -3,6 +3,7 @@ package com.example.munch_cmpt362.group.datadaoview
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 // Sample user data
@@ -18,6 +19,7 @@ data class User (
 
 // Data for basic group information
 @Entity(tableName = "group_table",
+    //primaryKeys = ["groupID", "user_ID"],
     foreignKeys = [
         ForeignKey(
             entity = User::class,

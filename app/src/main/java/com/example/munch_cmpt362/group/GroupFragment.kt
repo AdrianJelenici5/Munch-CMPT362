@@ -20,6 +20,7 @@ import com.example.munch_cmpt362.group.datadaoview.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class GroupFragment: Fragment() {
 
@@ -33,6 +34,12 @@ class GroupFragment: Fragment() {
     lateinit var groupViewModel: GroupViewModel
     private lateinit var groupRepository: GroupRepository
     private lateinit var groupViewModelFactory: GroupViewModelFactory
+
+    private var STUB_USER_ID = 1L
+    private var MEMBER_TAG = "member tag"
+
+    private var arrayName = arrayOf("Alex", "Bob", "Charles", "Dan", "Evan",
+        "Frank", "Gabriel")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -52,13 +59,14 @@ class GroupFragment: Fragment() {
         groupDatabaseDao = groupDatabase.groupDatabaseDao
         // get our User and stub into database
         var user = User()
-        user.userName = "Gabriel"
+        //user.userName = "Gabriel"
+        user.userName = arrayName.get(Random.nextInt(arrayName.size))
         CoroutineScope(IO).launch {
             groupDatabaseDao.insertStubUser(user)
         }
         // hopefully autogenerates 1
 
-        groupRepository = GroupRepository(groupDatabaseDao, 1L)
+        groupRepository = GroupRepository(groupDatabaseDao, STUB_USER_ID)
         groupViewModelFactory = GroupViewModelFactory(groupRepository)
         groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(GroupViewModel::class.java)
         groupViewModel.allGroupsLiveData.observe(requireActivity()){
@@ -73,6 +81,13 @@ class GroupFragment: Fragment() {
 
         myGroupListView.setOnItemClickListener(){ parent, view, position, id ->
             Toast.makeText(requireActivity(), "Stub to display members", Toast.LENGTH_SHORT).show()
+            // Get group object
+            var group: Group = myGroupListAdapter.getItem(position)
+            // Start the GROUP MEMBERS fragment, initialize group object in it
+            val groupMemberFragment = GroupMembersFragment()
+            groupMemberFragment.group = group
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(android.R.id.content, groupMemberFragment).addToBackStack("group tag").commit()
         }
 
 

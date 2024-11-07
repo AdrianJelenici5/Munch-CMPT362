@@ -38,4 +38,17 @@ class GroupRepository (private val groupDatabaseDao: GroupDatabaseDao, private v
         }
     }
 
+    fun getUser(userID: Long){
+        CoroutineScope(IO).launch {
+            groupDatabaseDao.getUser(userID)
+        }
+    }
+
+    // Maybe not used
+    fun getAllUsersInGroup(groupID: Long){
+        CoroutineScope(IO).launch{
+            groupDatabaseDao.getAllUsersInGroup(groupID)
+        }
+    }
+
 }

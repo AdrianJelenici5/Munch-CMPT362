@@ -1,6 +1,5 @@
 package com.example.munch_cmpt362.group
 
-import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
@@ -14,11 +13,12 @@ import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.group.datadaoview.Group
 import com.example.munch_cmpt362.group.datadaoview.GroupViewModel
 
-class AddGroupDialog: DialogFragment(), DialogInterface.OnClickListener {
+class AddGroupMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
     private lateinit var editText: EditText
     private lateinit var groupViewModel: GroupViewModel
 
     private var STUB_USER_ID = 1L
+    private var STUB_GROUP_ID = 1L
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         lateinit var ret: Dialog
@@ -27,7 +27,7 @@ class AddGroupDialog: DialogFragment(), DialogInterface.OnClickListener {
         val view: View = requireActivity().layoutInflater.inflate(R.layout.add_group_dialog,null)
         editText = view.findViewById(R.id.add_group_edittext)
         builder.setView(view)
-        builder.setTitle("Add Group")
+        builder.setTitle("Add Group Member")
         builder.setPositiveButton("ok", this)
         builder.setNegativeButton("cancel", this)
         ret = builder.create()
@@ -38,10 +38,12 @@ class AddGroupDialog: DialogFragment(), DialogInterface.OnClickListener {
         if (item == DialogInterface.BUTTON_POSITIVE) {
             println("GABRIEL CHENG : ${editText.text}")
             if(editText.text.toString() != "") {
-                // stub add group
+                // create group entry for added member
                 var group = Group()
-                group.userID = STUB_USER_ID
-                group.groupName = editText.text.toString()
+                // Add the user as the member
+                group.groupID = groupViewModel.currentGroupAdding.groupID
+                group.userID = editText.text.toString().toLong()
+                group.groupName = groupViewModel.currentGroupAdding.groupName
                 groupViewModel.insertGroup(group)
             }
             Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()

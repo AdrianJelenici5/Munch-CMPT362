@@ -7,10 +7,11 @@ import android.widget.BaseAdapter
 import android.widget.TextView
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.group.datadaoview.Group
+import com.example.munch_cmpt362.group.datadaoview.User
 
-class GroupListAdapter(private val context: Context, private var groupList: List<Group>): BaseAdapter() {
-    override  fun getItem(position: Int): Group{
-        return groupList.get(position)
+class GroupMemberListAdapter(private val context: Context, private var groupMemberList: List<User>): BaseAdapter() {
+    override  fun getItem(position: Int): Any{
+        return groupMemberList.get(position)
     }
 
     override fun getItemId(position: Int): Long{
@@ -18,20 +19,20 @@ class GroupListAdapter(private val context: Context, private var groupList: List
     }
 
     override fun getCount(): Int{
-        return groupList.size
+        return groupMemberList.size
     }
 
     override fun getView(position: Int, view: View?, viewGroup: ViewGroup?): View {
         val view = View.inflate(context, R.layout.group_list_layout_adapter, null)
         val textViewId = view.findViewById<TextView>(R.id.group_id)
         val textViewName = view.findViewById<TextView>(R.id.group_name)
-        textViewId.text = groupList.get(position).groupID.toString()
-        textViewName.text = groupList.get(position).groupName
+        textViewId.text = groupMemberList.get(position).userID.toString()
+        textViewName.text = groupMemberList.get(position).userName
         return view
     }
 
-    fun replace(newList: List<Group>){
-        groupList = newList
+    fun replace(newList: List<User>){
+        groupMemberList = newList
     }
 
 }

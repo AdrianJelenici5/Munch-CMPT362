@@ -25,9 +25,17 @@ interface GroupDatabaseDao {
     suspend fun voteUpRestaurant(key: Long, userID: Long, restaurantName: String)
 
     // Voting, delete the true
-    @Query("DELETE FROM group_table WHERE groupID=:key AND user_ID = :userID " +
+    @Query("DELETE FROM group_table WHERE groupID = :key AND user_ID = :userID " +
             "AND restaurant_name = :restaurantName  AND voting = 1")
     suspend fun voteDownRestaurant(key: Long, userID: Long, restaurantName: String)
+
+    // Get the user from user_id
+    @Query("SELECT * FROM USER_TABLE WHERE user_ID = :key")
+    fun getUser(key: Long): User
+
+    // Get all people in the group
+    @Query("SELECT * FROM USER_TABLE WHERE user_ID IN (SELECT user_ID FROM group_table WHERE groupID = :key)")
+    fun getAllUsersInGroup(key: Long): List<User>
 
     // Stub User insert
     @Insert

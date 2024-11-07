@@ -1,0 +1,32 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/Members_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:textAlignment="center"
+        android:text="Members"
+        android:textSize="18sp"
+        />
+
+    <ListView
+        android:id="@+id/Members_listview"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_below="@id/Members_title"
+        />
+
+    <Button
+        android:id="@+id/Add_members_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/Members_listview"
+        android:layout_centerInParent="true"
+        android:text="Add Members" />
+
+
+</RelativeLayout>
