@@ -69,6 +69,13 @@ class UserRepository @Inject constructor(
 
     suspend fun updateUserProfile(updates: Map<String, String>): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("No authenticated user")
+        val email = auth.currentUser?.email ?: throw Exception("No user email found")
+        val updateData = hashMapOf(
+            "userId" to userId,
+            "email" to email,
+            "name" to (updates["name"] ?: ""),
+            "bio" to (updates["bio"] ?: "")
+        )
         Log.d(TAG, "Updating profile for user: $userId with data: $updates")
         usersCollection.document(userId)
             .set(updates, SetOptions.merge())
