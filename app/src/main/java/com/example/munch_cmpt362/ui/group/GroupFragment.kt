@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.group
+package com.example.munch_cmpt362.ui.group
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,14 +10,14 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.group.datadaoview.Counter
-import com.example.munch_cmpt362.group.datadaoview.Group
-import com.example.munch_cmpt362.group.datadaoview.GroupDatabase
-import com.example.munch_cmpt362.group.datadaoview.GroupDatabaseDao
-import com.example.munch_cmpt362.group.datadaoview.GroupRepository
-import com.example.munch_cmpt362.group.datadaoview.GroupViewModel
-import com.example.munch_cmpt362.group.datadaoview.GroupViewModelFactory
-import com.example.munch_cmpt362.group.datadaoview.User
+import com.example.munch_cmpt362.ui.group.datadaoview.Counter
+import com.example.munch_cmpt362.ui.group.datadaoview.Group
+import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabase
+import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabaseDao
+import com.example.munch_cmpt362.ui.group.datadaoview.GroupRepository
+import com.example.munch_cmpt362.ui.group.datadaoview.GroupViewModel
+import com.example.munch_cmpt362.ui.group.datadaoview.GroupViewModelFactory
+import com.example.munch_cmpt362.ui.group.datadaoview.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
@@ -69,7 +69,8 @@ class GroupFragment: Fragment() {
 
         groupRepository = GroupRepository(groupDatabaseDao, STUB_USER_ID)
         groupViewModelFactory = GroupViewModelFactory(groupRepository)
-        groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(GroupViewModel::class.java)
+        groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(
+            GroupViewModel::class.java)
         groupViewModel.allGroupsLiveData.observe(requireActivity()){
             myGroupListAdapter.replace(it)
             myGroupListAdapter.notifyDataSetChanged()

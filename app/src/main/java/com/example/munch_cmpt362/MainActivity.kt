@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
                     navController.popBackStack(R.id.splashFragment, true)
                 }
 
+            }
         }
     }
 

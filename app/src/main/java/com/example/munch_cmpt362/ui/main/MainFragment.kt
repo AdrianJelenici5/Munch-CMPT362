@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.ui.group.GroupFragment
 import com.example.munch_cmpt362.ui.swipe.SwipeFragment
 import com.example.munch_cmpt362.ui.adapter.MyFragmentStateAdapter
 import com.example.munch_cmpt362.ui.profile.ProfileFragment
@@ -23,12 +24,13 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
     private lateinit var swipeFragment: SwipeFragment
     private lateinit var profileFragment: ProfileFragment
+    private lateinit var groupFragment: GroupFragment
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var myMyFragmentStateAdapter: MyFragmentStateAdapter
     private lateinit var locationManager: LocationManager
     private val PERMISSION_REQUEST_CODE = 0
-    private val tabTitles = arrayOf("Swipe", "Profile", "temp2")
+    private val tabTitles = arrayOf("Swipe", "Profile", "Groups")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -39,7 +41,8 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
 
         profileFragment = ProfileFragment()
         swipeFragment = SwipeFragment()
-        val fragments = arrayListOf<Fragment>(swipeFragment, profileFragment)
+        groupFragment = GroupFragment()
+        val fragments = arrayListOf<Fragment>(swipeFragment, profileFragment, groupFragment)
 
         myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter

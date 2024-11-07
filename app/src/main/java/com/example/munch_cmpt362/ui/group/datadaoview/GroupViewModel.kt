@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.group.datadaoview
+package com.example.munch_cmpt362.ui.group.datadaoview
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel

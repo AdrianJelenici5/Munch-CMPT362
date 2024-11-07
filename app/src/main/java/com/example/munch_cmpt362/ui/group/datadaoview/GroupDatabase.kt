@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.group.datadaoview
+package com.example.munch_cmpt362.ui.group.datadaoview
 
 import android.content.Context
 import androidx.room.Database
@@ -14,7 +14,7 @@ abstract class GroupDatabase: RoomDatabase() {
         @Volatile
         private var INSTANCE: GroupDatabase? = null
 
-        fun getInstance(context: Context): GroupDatabase{
+        fun getInstance(context: Context): GroupDatabase {
             synchronized(this){
                 var instance = INSTANCE
                 if(instance == null){

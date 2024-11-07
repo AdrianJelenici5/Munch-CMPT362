@@ -12,6 +12,7 @@ interface YelpService {
         @Header("Authorization") authHeader: String,
         @Query("latitude") latitude: Double,
         @Query("longitude") longitude: Double,
+        @Query("radius") radius: Int = 1000,
         @Query("term") term: String = "restaurant",
         @Query("limit") limit: Int = 10
     ): Call<YelpResponse>
