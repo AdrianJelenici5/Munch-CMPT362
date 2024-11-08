@@ -88,7 +88,7 @@
             android:id="@+id/openWebsiteButton"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@android:drawable/ic_menu_mapmode"
+            android:src="@drawable/ic_website"
             android:contentDescription="Open Website"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:padding="8dp"
