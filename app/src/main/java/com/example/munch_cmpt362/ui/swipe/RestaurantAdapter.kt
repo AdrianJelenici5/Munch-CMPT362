@@ -15,7 +15,7 @@ import com.bumptech.glide.Glide
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 
-class RestaurantAdapter(private val restaurants: List<Business>) :
+class RestaurantAdapter(private var restaurants: List<Business>) :
     RecyclerView.Adapter<RestaurantAdapter.RestaurantViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RestaurantViewHolder {
