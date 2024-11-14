@@ -30,6 +30,15 @@ class RestaurantAdapter(private var restaurants: List<Business>) :
 
     override fun getItemCount(): Int = restaurants.size
 
+    fun getItem(position: Int): Business {
+        return restaurants[position]
+    }
+
+    fun updateRestaurants(newRestaurants: List<Business>) {
+        this.restaurants = newRestaurants
+        notifyDataSetChanged()
+    }
+
     class RestaurantViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.restaurantName)
         private val ratingTextView: TextView = itemView.findViewById(R.id.restaurantRating)

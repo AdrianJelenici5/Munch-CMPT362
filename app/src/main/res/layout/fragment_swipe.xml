@@ -34,20 +34,19 @@
         android:id="@+id/noMoreRestaurantsText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:text="No more nearby restaurants, come back later."
         android:textSize="16sp"
         android:textColor="@android:color/darker_gray"
-        android:visibility="invisible"
+        android:visibility="gone"
+        android:layout_below="@id/myLocationText"
         android:paddingBottom="16dp" />
 
     <com.yuyakaido.android.cardstackview.CardStackView
         android:id="@+id/card_stack_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:layout_below="@id/myLocationText"
-        android:layout_above="@id/noMoreRestaurantsText"
         android:layout_centerInParent="true"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="48dp" />

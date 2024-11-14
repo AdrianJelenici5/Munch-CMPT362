@@ -8,37 +8,54 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.munch_cmpt362.data.remote.api.ApiHelper
-import com.example.munch_cmpt362.Business
-import com.example.munch_cmpt362.Category
-import com.example.munch_cmpt362.Location
-import com.example.munch_cmpt362.OpenHours
-import com.example.munch_cmpt362.BusinessHours
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.YelpResponse
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.yuyakaido.android.cardstackview.CardStackLayoutManager
 import com.yuyakaido.android.cardstackview.CardStackListener
 import com.yuyakaido.android.cardstackview.CardStackView
 import com.yuyakaido.android.cardstackview.Direction
 import com.yuyakaido.android.cardstackview.StackFrom
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import munch_cmpt362.database.MunchDatabase
+import munch_cmpt362.database.restaurants.RestaurantDao
+import munch_cmpt362.database.restaurants.RestaurantRepository
+
 
 class SwipeFragment : Fragment() {
     private lateinit var cardStackView: CardStackView
+    private lateinit var title : TextView
     private lateinit var noMoreRestaurantsText: TextView
     private lateinit var cardStackLayoutManager: CardStackLayoutManager
     private lateinit var restaurantAdapter: RestaurantAdapter
+
+    private lateinit var database: MunchDatabase
+    private lateinit var databaseDao: RestaurantDao
+    private lateinit var repository: RestaurantRepository
+
+
     private val swipeViewModel: SwipeViewModel by viewModels()
 
     private var lat = 0.0
     private var lng = 0.0
 
+    val db = Firebase.firestore
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_swipe, container, false)
+        title = view.findViewById(R.id.title)
         cardStackView = view.findViewById(R.id.card_stack_view)
         noMoreRestaurantsText = view.findViewById(R.id.noMoreRestaurantsText)
 
         restaurantAdapter = RestaurantAdapter(emptyList())
         cardStackView.adapter = restaurantAdapter
+
+        database = MunchDatabase.getInstance(requireContext())
+        databaseDao = database.restaurantDao
+        repository = RestaurantRepository(databaseDao)
 
         setupCardStackView()
         return view
@@ -47,8 +64,8 @@ class SwipeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d("JP:", "api call on ${lat} ${lng}")
-        swipeViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+        swipeViewModel.restaurants.observe(requireActivity()) { restaurants ->
+            Log.d("JP:", "from view model ${restaurants}")
             if (restaurants.isNotEmpty()) {
                 restaurantAdapter = RestaurantAdapter(restaurants)
                 cardStackView.adapter = restaurantAdapter
@@ -56,7 +73,7 @@ class SwipeFragment : Fragment() {
                 noMoreRestaurantsText.visibility = View.VISIBLE
             }
         }
-        swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng)
+        swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng, databaseDao)
     }
 
     fun updateLocation(latitude: Double, longitude: Double) {
@@ -83,8 +100,31 @@ class SwipeFragment : Fragment() {
 
             override fun onCardSwiped(direction: Direction?) {
                 if (cardStackLayoutManager.topPosition == restaurantAdapter.itemCount) {
-                    // Show "No more restaurants" message when all cards are swiped
                     noMoreRestaurantsText.visibility = View.VISIBLE
+                }
+
+                val position = cardStackLayoutManager.topPosition - 1 // Get the position of the swiped card
+                val swipedRestaurant = restaurantAdapter.getItem(position) // Get the restaurant that was swiped
+
+                when (direction) {
+                    Direction.Right -> { //Liked = + 10 score
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val score = repository.getScoreById(swipedRestaurant.id)
+                            repository.updateScore(swipedRestaurant.id, score + 20)
+                        }
+//                        swipeViewModel.removeRestaurant(swipedRestaurant.id) //remove from view model so it doesn't show up when loading fragment again
+                        //dk what's wrong, list just won't update
+                    }
+
+                    Direction.Left -> { //Disliked = - 10 score
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val score = repository.getScoreById(swipedRestaurant.id)
+                            repository.updateScore(swipedRestaurant.id, score - 20)
+                        }
+//                        swipeViewModel.removeRestaurant(swipedRestaurant.id) //remove from view model so it doesn't show up when loading fragment again
+                    }
+
+                    else -> {}
                 }
             }
 
@@ -115,4 +155,39 @@ class SwipeFragment : Fragment() {
 
         cardStackView.layoutManager = cardStackLayoutManager
     }
+
+    fun postTop3Online() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            val userId = user.uid
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val top3Rest = repository.getTop3Restaurants()
+                val top3RestMap = top3Rest.mapIndexed { index, restaurant ->
+                    "restaurant_${index + 1}" to restaurant
+                }.toMap()
+
+                db.collection("user-preference").document(userId).set(top3RestMap)
+                    .addOnSuccessListener {
+                        Log.d("JP:", "User preference $top3RestMap successfully uploaded to Firestore")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w("JP:", "Error adding document", e)
+                    }
+            }
+        } else {
+            Log.w("JP:", "No authenticated user found. Cannot upload preferences.")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        postTop3Online()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        postTop3Online()
+    }
+
 }

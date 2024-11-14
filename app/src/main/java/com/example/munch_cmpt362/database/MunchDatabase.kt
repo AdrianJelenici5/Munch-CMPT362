@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.example.munch_cmpt362.database.restaurants.Converters
 import munch_cmpt362.database.groups.*
 import munch_cmpt362.database.groupxuser.*
 import munch_cmpt362.database.restaurants.*
@@ -13,7 +15,7 @@ import munch_cmpt362.database.users.*
 // This db will be made up of four tables:
 @Database(entities = [RestaurantEntry::class, UserEntry::class, GroupEntry::class,
                      GroupUserCrossRef::class], version = 1)
-
+@TypeConverters(Converters::class)
 // Telling the db to use a specific type of conversion method:
 abstract class MunchDatabase : RoomDatabase() {
 

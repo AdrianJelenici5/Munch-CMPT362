@@ -2,6 +2,7 @@ package munch_cmpt362.database.restaurants
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 interface RestaurantDao {
 
     // This method will insert data into the db:
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertEntry(restaurantEntry: RestaurantEntry)
 
     // This method will select all entries from the db
@@ -25,5 +26,16 @@ interface RestaurantDao {
     // This entry will delete specific entry from the db
     @Query("DELETE FROM restaurant_table WHERE restaurantId = :entryId")
     fun deleteEntry(entryId: Long)
+
+    @Query("UPDATE restaurant_table SET userScore = :newScore WHERE restaurantId = :restaurantId")
+    fun updateUserScore(restaurantId: String, newScore: Int)
+
+    // This method will return score of restaurant based on ID
+    @Query("SELECT userScore FROM restaurant_table WHERE restaurantId = :restaurantId")
+    fun getScoreById(restaurantId: String): Int
+
+    // This method will return individual top 3 restaurant preference based on score.
+    @Query("SELECT restaurantId FROM restaurant_table ORDER BY userScore DESC LIMIT 3")
+    fun getTop3Restaurants(): List<String>
 
 }
