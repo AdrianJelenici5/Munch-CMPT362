@@ -1,79 +1,168 @@
 package com.example.munch_cmpt362.ui.swipe
 
+import RestaurantAdapter
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.distinctUntilChanged
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.yuyakaido.android.cardstackview.CardStackLayoutManager
-import com.yuyakaido.android.cardstackview.CardStackListener
-import com.yuyakaido.android.cardstackview.CardStackView
-import com.yuyakaido.android.cardstackview.Direction
-import com.yuyakaido.android.cardstackview.StackFrom
-import kotlinx.coroutines.CoroutineScope
+import com.yuyakaido.android.cardstackview.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import munch_cmpt362.database.MunchDatabase
 import munch_cmpt362.database.restaurants.RestaurantDao
 import munch_cmpt362.database.restaurants.RestaurantRepository
 
-
 class SwipeFragment : Fragment() {
     private lateinit var cardStackView: CardStackView
-    private lateinit var title : TextView
+    private lateinit var title: TextView
     private lateinit var noMoreRestaurantsText: TextView
+    private lateinit var decisionIcon: ImageView
     private lateinit var cardStackLayoutManager: CardStackLayoutManager
     private lateinit var restaurantAdapter: RestaurantAdapter
+
+    private val swipeViewModel: SwipeViewModel by viewModels()
 
     private lateinit var database: MunchDatabase
     private lateinit var databaseDao: RestaurantDao
     private lateinit var repository: RestaurantRepository
 
+    private var lat: Double = 0.0
+    private var lng: Double = 0.0
 
-    private val swipeViewModel: SwipeViewModel by viewModels()
+    private val db = Firebase.firestore
 
-    private var lat = 0.0
-    private var lng = 0.0
-
-    val db = Firebase.firestore
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_swipe, container, false)
-        title = view.findViewById(R.id.title)
-        cardStackView = view.findViewById(R.id.card_stack_view)
-        noMoreRestaurantsText = view.findViewById(R.id.noMoreRestaurantsText)
-
-        restaurantAdapter = RestaurantAdapter(emptyList())
-        cardStackView.adapter = restaurantAdapter
-
-        database = MunchDatabase.getInstance(requireContext())
-        databaseDao = database.restaurantDao
-        repository = RestaurantRepository(databaseDao)
-
+        initializeUI(view)
+        initializeRepository()
         setupCardStackView()
+        observeViewModel()
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng, databaseDao)
+    }
 
-        swipeViewModel.restaurants.observe(requireActivity()) { restaurants ->
-            Log.d("JP:", "from view model ${restaurants}")
+    private fun initializeUI(view: View) {
+        title = view.findViewById(R.id.title)
+        cardStackView = view.findViewById(R.id.card_stack_view)
+        noMoreRestaurantsText = view.findViewById(R.id.noMoreRestaurantsText)
+        decisionIcon = view.findViewById(R.id.decision_icon)
+        restaurantAdapter = RestaurantAdapter()
+        cardStackView.adapter = restaurantAdapter
+    }
+
+    private fun initializeRepository() {
+        database = MunchDatabase.getInstance(requireContext())
+        databaseDao = database.restaurantDao
+        repository = RestaurantRepository(databaseDao)
+    }
+
+    private fun setupCardStackView() {
+        cardStackLayoutManager = CardStackLayoutManager(requireContext(), object : CardStackListener {
+            override fun onCardDragging(direction: Direction?, ratio: Float) {
+                handleCardDragging(direction, ratio)
+            }
+
+            override fun onCardSwiped(direction: Direction?) {
+                handleCardSwiped(direction)
+            }
+
+            override fun onCardRewound() {}
+            override fun onCardCanceled() {
+                decisionIcon.visibility = View.GONE
+            }
+
+            override fun onCardAppeared(view: View?, position: Int) {}
+            override fun onCardDisappeared(view: View?, position: Int) {}
+        })
+
+        cardStackLayoutManager.apply {
+            setStackFrom(StackFrom.None)
+            setVisibleCount(3)
+            setTranslationInterval(8.0f)
+            setScaleInterval(0.95f)
+            setSwipeThreshold(0.3f)
+            setMaxDegree(20.0f)
+            setDirections(Direction.HORIZONTAL)
+            setCanScrollHorizontal(true)
+            setCanScrollVertical(false)
+        }
+
+        cardStackView.layoutManager = cardStackLayoutManager
+    }
+
+    private fun handleCardDragging(direction: Direction?, ratio: Float) {
+        when (direction) {
+            Direction.Right -> {
+                updateDecisionIcon(R.drawable.ic_thumbs_up, Color.GREEN, ratio)
+            }
+            Direction.Left -> {
+                updateDecisionIcon(R.drawable.ic_thumbs_down, Color.RED, ratio)
+            }
+            else -> decisionIcon.visibility = View.GONE
+        }
+    }
+
+    private fun handleCardSwiped(direction: Direction?) {
+        val position = cardStackLayoutManager.topPosition - 1
+        val swipedRestaurant = restaurantAdapter.getItemAtPosition(position)
+
+        when (direction) {
+            Direction.Right -> updateRestaurantScore(swipedRestaurant.id, 20)
+            Direction.Left -> updateRestaurantScore(swipedRestaurant.id, -20)
+            else -> {}
+        }
+
+//        Log.d("JP:", "2. removing restaurants on swiped")
+        swipeViewModel.queueRestaurantForRemoval(swipedRestaurant.id)
+
+        decisionIcon.visibility = View.GONE
+
+        if (cardStackLayoutManager.topPosition == restaurantAdapter.itemCount) {
+            noMoreRestaurantsText.visibility = View.VISIBLE
+        }
+    }
+
+    private fun updateDecisionIcon(iconRes: Int, color: Int, alpha: Float) {
+        decisionIcon.setImageResource(iconRes)
+        decisionIcon.setColorFilter(color)
+        decisionIcon.visibility = View.VISIBLE
+        decisionIcon.alpha = alpha
+    }
+
+    private fun updateRestaurantScore(restaurantId: String, scoreDelta: Int) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val currentScore = repository.getScoreById(restaurantId)
+            repository.updateScore(restaurantId, currentScore + scoreDelta)
+        }
+    }
+
+    private fun observeViewModel() {
+        swipeViewModel.restaurants.distinctUntilChanged().observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
-                restaurantAdapter = RestaurantAdapter(restaurants)
-                cardStackView.adapter = restaurantAdapter
+//                Log.d("JP:", "1. observed new restaurant and update to adapter")
+                restaurantAdapter.submitList(restaurants)
+                noMoreRestaurantsText.visibility = View.GONE
             } else {
                 noMoreRestaurantsText.visibility = View.VISIBLE
             }
         }
-        swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng, databaseDao)
     }
 
     fun updateLocation(latitude: Double, longitude: Double) {
@@ -82,106 +171,32 @@ class SwipeFragment : Fragment() {
         view?.findViewById<TextView>(R.id.myLocationText)?.text = "Lat: $lat, Long: $lng"
     }
 
-        private fun setupCardStackView() {
-        cardStackLayoutManager = CardStackLayoutManager(requireContext(), object : CardStackListener {
-            override fun onCardDragging(direction: Direction?, ratio: Float) {
-                when (direction) {
-                    Direction.Right -> {
-
-                    }
-
-                    Direction.Left -> {
-
-                    }
-
-                    else -> {}
-                }
-            }
-
-            override fun onCardSwiped(direction: Direction?) {
-                if (cardStackLayoutManager.topPosition == restaurantAdapter.itemCount) {
-                    noMoreRestaurantsText.visibility = View.VISIBLE
-                }
-
-                val position = cardStackLayoutManager.topPosition - 1 // Get the position of the swiped card
-                val swipedRestaurant = restaurantAdapter.getItem(position) // Get the restaurant that was swiped
-
-                when (direction) {
-                    Direction.Right -> { //Liked = + 10 score
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val score = repository.getScoreById(swipedRestaurant.id)
-                            repository.updateScore(swipedRestaurant.id, score + 20)
-                        }
-//                        swipeViewModel.removeRestaurant(swipedRestaurant.id) //remove from view model so it doesn't show up when loading fragment again
-                        //dk what's wrong, list just won't update
-                    }
-
-                    Direction.Left -> { //Disliked = - 10 score
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val score = repository.getScoreById(swipedRestaurant.id)
-                            repository.updateScore(swipedRestaurant.id, score - 20)
-                        }
-//                        swipeViewModel.removeRestaurant(swipedRestaurant.id) //remove from view model so it doesn't show up when loading fragment again
-                    }
-
-                    else -> {}
-                }
-            }
-
-            override fun onCardRewound() {
-
-            }
-
-            override fun onCardCanceled() {
-
-            }
-
-            override fun onCardAppeared(view: View?, position: Int) {
-            }
-
-            override fun onCardDisappeared(view: View?, position: Int) {
-            }
-        })
-
-        cardStackLayoutManager.setStackFrom(StackFrom.None)
-        cardStackLayoutManager.setVisibleCount(3)
-        cardStackLayoutManager.setTranslationInterval(8.0f)
-        cardStackLayoutManager.setScaleInterval(0.95f)
-        cardStackLayoutManager.setSwipeThreshold(0.3f)
-        cardStackLayoutManager.setMaxDegree(20.0f)
-        cardStackLayoutManager.setDirections(Direction.HORIZONTAL)
-        cardStackLayoutManager.setCanScrollHorizontal(true)
-        cardStackLayoutManager.setCanScrollVertical(false)
-
-        cardStackView.layoutManager = cardStackLayoutManager
-    }
-
-    fun postTop3Online() {
+    private fun postTop3Online() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             val userId = user.uid
-
-            CoroutineScope(Dispatchers.IO).launch {
-                val top3Rest = repository.getTop3Restaurants()
-                val top3RestMap = top3Rest.mapIndexed { index, restaurant ->
+            lifecycleScope.launch(Dispatchers.IO) {
+                val top3Restaurants = repository.getTop3Restaurants()
+                val top3Map = top3Restaurants.mapIndexed { index, restaurant ->
                     "restaurant_${index + 1}" to restaurant
                 }.toMap()
 
-                db.collection("user-preference").document(userId).set(top3RestMap)
+                db.collection("user-preference").document(userId).set(top3Map)
                     .addOnSuccessListener {
-                        Log.d("JP:", "User preference $top3RestMap successfully uploaded to Firestore")
+                        Log.d("SwipeFragment", "User preference successfully uploaded: $top3Map")
                     }
                     .addOnFailureListener { e ->
-                        Log.w("JP:", "Error adding document", e)
+                        Log.e("SwipeFragment", "Error uploading preferences", e)
                     }
             }
         } else {
-            Log.w("JP:", "No authenticated user found. Cannot upload preferences.")
+            Log.w("SwipeFragment", "No authenticated user found. Cannot upload preferences.")
         }
     }
 
     override fun onPause() {
         super.onPause()
+        swipeViewModel.processPendingRemovals()
         postTop3Online()
     }
 
@@ -189,5 +204,4 @@ class SwipeFragment : Fragment() {
         super.onStart()
         postTop3Online()
     }
-
 }

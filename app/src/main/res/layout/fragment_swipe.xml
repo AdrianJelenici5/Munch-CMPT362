@@ -51,4 +51,12 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="48dp" />
 
+    <ImageView
+        android:id="@+id/decision_icon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_thumbs_up"
+    android:visibility="gone" />
+
 </RelativeLayout>

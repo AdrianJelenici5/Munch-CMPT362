@@ -23,6 +23,8 @@ class SwipeViewModel : ViewModel() {
     private val _restaurants = MutableLiveData<List<Business>>()
     val restaurants: LiveData<List<Business>> = _restaurants
 
+    private val pendingRemovalIds = mutableListOf<String>()
+
     private var dataFetched = false
 
     fun fetchRestaurants(isFakeData: Boolean = false, latitude: Double, longitude: Double, restaurantDao: RestaurantDao) {
@@ -35,7 +37,6 @@ class SwipeViewModel : ViewModel() {
             Log.d("JP:", "API called to fetch")
             ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
                 response?.businesses?.let { businesses ->
-//                    _restaurants.value = businesses
                     dataFetched = true
 
                     // Convert each Business object into a RestaurantEntry and insert into the database
@@ -70,13 +71,13 @@ class SwipeViewModel : ViewModel() {
         }
     }
 
-    fun removeRestaurant(restaurantId: String) {
-        val updatedList = _restaurants.value?.filterNot { it.id == restaurantId }
-        Log.d("JP:", "Id to remove: $restaurantId")
-        Log.d("JP:", "Before removing: ${_restaurants.value}")
+    fun queueRestaurantForRemoval(restaurantId: String) {
+        pendingRemovalIds.add(restaurantId)
+    }
 
-        _restaurants.value = updatedList!!
-        Log.d("JP:", "After removing: ${_restaurants.value}")
+    fun processPendingRemovals() {
+        _restaurants.value = _restaurants.value?.filterNot { it.id in pendingRemovalIds }
+        pendingRemovalIds.clear()
     }
 
     private fun loadFakeBusinesses(): YelpResponse {

@@ -29,7 +29,7 @@ object ApiHelper {
         call.enqueue(object : Callback<YelpResponse> {
             override fun onResponse(call: Call<YelpResponse>, response: Response<YelpResponse>) {
                 if (response.isSuccessful) {
-                    Log.e("Yelp Search Api", "Body: ${response.body()}")
+                    Log.d("Yelp Search Api", "Body: ${response.body()}")
                     onResult(response.body())
                 } else {
                     Log.e("Yelp Nearby Api", "Error: ${response.code()}")
