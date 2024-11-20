@@ -97,7 +97,8 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
             }
 
             // Log.d("XD:", "XD: distance outside: ${string_dist}")
-            // restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+            // If I dont include this, some restaurants dont get displayed in the list:
+            restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
 
             ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
 

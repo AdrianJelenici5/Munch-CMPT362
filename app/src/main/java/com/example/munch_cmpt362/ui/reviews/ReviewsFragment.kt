@@ -25,8 +25,10 @@ import java.util.Locale
 import kotlin.math.*
 
 
-// TODO: sorting by distance can take a long time and with a lot of entries can cause the app to crash
-// TODO: Find out how to fix performance so this doesnt happen
+// TODO: sorting by distance can take a long time and with a lot of entries can cause the app to crash.
+//  Find out how to fix performance so this doesnt happen
+// TODO: Some restaurants arent being displayed in the list for some reason
+//  even tho I get them using same method as swipe fragment
 
 class ReviewsFragment : Fragment() {
 
