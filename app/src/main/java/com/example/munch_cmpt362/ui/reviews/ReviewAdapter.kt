@@ -44,10 +44,26 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
         private val restaurantInfoTextView: TextView = itemView.findViewById(R.id.restaurantInfo)
         private val ratingTextView: TextView = itemView.findViewById(R.id.tvReview)
         private val imageView: ImageView = itemView.findViewById(R.id.ivImage)
+        private val openOrClosed: ImageView = itemView.findViewById(R.id.openOrClosed)
+        // private val openNowStatus: TextView = itemView.findViewById(R.id.openNowStatus)
 
         fun bind(restaurant: Business) {
             // Log.d("XD:", "XD: binding")
-            val price = if (restaurant.price != null) "(${restaurant.price})" else ""
+            val price = if (restaurant.price != null) "(${restaurant.price}) " else ""
+
+            for (hours in restaurant.business_hours) {
+                if (hours.is_open_now) {
+                    openOrClosed.setImageResource(R.drawable.green_dot)
+                } else {
+                    openOrClosed.setImageResource(R.drawable.red_dot)
+                }
+            }
+//            openNowStatus.text = if (hours.is_open_now) "Yes" else "No"
+//            openNowStatus.setTextColor(
+//                if (hours.is_open_now) android.graphics.Color.GREEN
+//                else android.graphics.Color.RED
+//            )
+
             nameTextView.text = "${restaurant.name} ${price}"
             val address = restaurant.location.address1
             val city = restaurant.location.city
@@ -55,6 +71,17 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
             ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
             Glide.with(itemView.context).load(restaurant.image_url).into(imageView)
             //locationTextView.text = restaurant.location
+
+            itemView.setOnClickListener {
+                Log.d("XD:", "XD: Item Clicked")
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.url))
+                itemView.context.startActivity(intent)
+            }
+
+//            openWebsiteButton.setOnClickListener {
+//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.url))
+//                itemView.context.startActivity(intent)
+//            }
         }
 
     }

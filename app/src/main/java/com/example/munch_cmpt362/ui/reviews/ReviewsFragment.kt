@@ -1,5 +1,7 @@
 package com.example.munch_cmpt362.ui.reviews
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,9 +21,8 @@ import com.example.munch_cmpt362.ui.swipe.SwipeViewModel
 
 
 // TODO:
-// 1) Make cards clickable (opens up link)
-// 2) Add option open or closed icon beside name
-// 3) Add option to sort by nearest to you
+// 1) Add open or closed icon beside name (do it with an image)?
+// 2) Add option to sort by nearest to you
 
 class ReviewsFragment : Fragment() {
 
@@ -29,6 +30,7 @@ class ReviewsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var reviewAdapter : ReviewAdapter
+    private lateinit var emptyTextView: TextView
 
     private lateinit var sortTypeSpinner: Spinner
     private var selectedSortTypeId = 0
@@ -39,6 +41,8 @@ class ReviewsFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_reviews, container, false)
 
+        emptyTextView = view.findViewById(R.id.emptyTextView)
+
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
@@ -48,7 +52,7 @@ class ReviewsFragment : Fragment() {
         sortTypeSpinner = view.findViewById<Spinner>(R.id.sort_spinner)
         sortTypeSpinner.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parentView: AdapterView<*>?, selectedItemView: View?, position: Int, id: Long) {
-                selectedSortTypeId = position // or `id` based on your logic
+                selectedSortTypeId = position
                 sortRestaurants()
             }
 
@@ -57,21 +61,24 @@ class ReviewsFragment : Fragment() {
             }
         })
 
+
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d("XD:", "api call on ${lat} ${lng}")
+//        Log.d("XD:", "api call on ${lat} ${lng}")
         reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-            Log.d("XD:", "Received restaurants: $restaurants")
+//            Log.d("XD:", "Received restaurants: $restaurants")
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = sortRestaurants(restaurants)
                 reviewAdapter = ReviewAdapter(sortedRestaurants)
                 recyclerView.adapter = reviewAdapter
             } else {
 //                noMoreRestaurantsText.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
+                emptyTextView.visibility = View.VISIBLE
                 Log.d("XD:", "No restaurants available.")
             }
         }
@@ -89,7 +96,11 @@ class ReviewsFragment : Fragment() {
             0 -> restaurants.sortedByDescending { it.rating } // Sort by name
             1 -> restaurants.sortedByDescending { it.review_count } // Sort by descending rating
             2 -> restaurants.sortedBy { it.name } // Sort by descending rating
-            else -> restaurants // Fallback
+            // 3 -> price
+            // 4 -> cuisine type
+            // 5 -> open now
+            // 6 -> nearest to you
+            else -> restaurants
         }
     }
 
@@ -107,5 +118,10 @@ class ReviewsFragment : Fragment() {
         }
         reviewViewModel.fetchRestaurants(lat, lng)
     }
+
+//    private fun openLink(url: String) {
+//        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+//        startActivity(intent)
+//    }
 
 }

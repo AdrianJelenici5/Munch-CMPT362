@@ -3,6 +3,7 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
@@ -12,7 +13,6 @@
     android:strokeColor="@android:color/black">
 
     <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -25,17 +25,39 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Name Text -->
-            <TextView
-                android:id="@+id/tvName"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Name"
-                android:textSize="16sp"
-                android:textColor="#000000"
-                android:paddingBottom="4dp" />
+                android:layout_height="wrap_content">
 
-            <!-- Location Text -->
+                <TextView
+                    android:id="@+id/tvName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="4dp"
+                    android:text="Name"
+                    android:textColor="#000000"
+                    android:textSize="16sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:id="@+id/openOrClosed"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:contentDescription="Open or Closed"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/red_dot"
+                    app:layout_constraintStart_toEndOf="@id/tvName"
+                    app:layout_constraintTop_toTopOf="@id/tvName"
+                    app:layout_constraintBottom_toBottomOf="@id/tvName"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="2dp"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <TextView
                 android:id="@+id/restaurantInfo"
                 android:layout_width="wrap_content"
