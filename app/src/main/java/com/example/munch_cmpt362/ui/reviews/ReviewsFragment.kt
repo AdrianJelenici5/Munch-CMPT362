@@ -25,8 +25,8 @@ import java.util.Locale
 import kotlin.math.*
 
 
-// TODO:
-// 1) Implement the rest of the sorting options
+// TODO: sorting by distance can take a long time and with a lot of entries can cause the app to crash
+// TODO: Find out how to fix performance so this doesnt happen
 
 class ReviewsFragment : Fragment() {
 
