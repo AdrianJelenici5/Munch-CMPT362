@@ -41,13 +41,17 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
     class ReviewViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val nameTextView: TextView = itemView.findViewById(R.id.tvName)
-        private val locationTextView: TextView = itemView.findViewById(R.id.tvLocation)
+        private val restaurantInfoTextView: TextView = itemView.findViewById(R.id.restaurantInfo)
         private val ratingTextView: TextView = itemView.findViewById(R.id.tvReview)
         private val imageView: ImageView = itemView.findViewById(R.id.ivImage)
 
         fun bind(restaurant: Business) {
             // Log.d("XD:", "XD: binding")
-            nameTextView.text = restaurant.name
+            val price = if (restaurant.price != null) "(${restaurant.price})" else ""
+            nameTextView.text = "${restaurant.name} ${price}"
+            val address = restaurant.location.address1
+            val city = restaurant.location.city
+            restaurantInfoTextView.text = "${restaurant.categories[0].title} | ${address}, ${city}"
             ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
             Glide.with(itemView.context).load(restaurant.image_url).into(imageView)
             //locationTextView.text = restaurant.location

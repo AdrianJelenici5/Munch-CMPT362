@@ -9,7 +9,7 @@
     app:cardCornerRadius="8dp"
     app:cardElevation="4dp"
     app:cardBackgroundColor="@android:color/white"
-    android:strokeColor="@android:color/darker_gray">
+    android:strokeColor="@android:color/black">
 
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
@@ -37,11 +37,11 @@
 
             <!-- Location Text -->
             <TextView
-                android:id="@+id/tvLocation"
+                android:id="@+id/restaurantInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Location"
-                android:textSize="14sp"
+                android:text="Type | Location"
+                android:textSize="12sp"
                 android:textColor="#666666" />
 
             <TextView

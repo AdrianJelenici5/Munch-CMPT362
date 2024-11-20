@@ -19,12 +19,9 @@ import com.example.munch_cmpt362.ui.swipe.SwipeViewModel
 
 
 // TODO:
-// 1) Order restaurants by review score (if tied on review, by number of reviews)
-// -----> add option to also order by number of reviews
-// 2) Make cards clickable (opens up link)
-// 3) Update Swipe Fragment to store a yes if swipe right on
-// 4) Only show swipe right restaurants
-
+// 1) Make cards clickable (opens up link)
+// 2) Add option open or closed icon beside name
+// 3) Add option to sort by nearest to you
 
 class ReviewsFragment : Fragment() {
 
