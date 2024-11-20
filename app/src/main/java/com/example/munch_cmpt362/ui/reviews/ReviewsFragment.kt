@@ -1,6 +1,9 @@
 package com.example.munch_cmpt362.ui.reviews
 
+import android.content.Context
 import android.content.Intent
+import android.location.Address
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -18,11 +21,12 @@ import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.ui.swipe.RestaurantAdapter
 import com.example.munch_cmpt362.ui.swipe.SwipeViewModel
+import java.util.Locale
+import kotlin.math.*
 
 
 // TODO:
-// 1) Add open or closed icon beside name (do it with an image)?
-// 2) Add option to sort by nearest to you
+// 1) Implement the rest of the sorting options
 
 class ReviewsFragment : Fragment() {
 
@@ -96,11 +100,77 @@ class ReviewsFragment : Fragment() {
             0 -> restaurants.sortedByDescending { it.rating } // Sort by name
             1 -> restaurants.sortedByDescending { it.review_count } // Sort by descending rating
             2 -> restaurants.sortedBy { it.name } // Sort by descending rating
-            // 3 -> price
-            // 4 -> cuisine type
-            // 5 -> open now
-            // 6 -> nearest to you
+            3 -> restaurants.sortedBy { it.price?.length ?: Int.MAX_VALUE }
+            4 -> restaurants.sortedBy { it.categories[0].title }
+            5 -> restaurants.sortedBy { it.isOpenNow() }
+            6 -> sortRestaurantsByDistance(restaurants, lat, lng)
             else -> restaurants
+        }
+    }
+
+    private fun Business.isOpenNow(): Boolean {
+        return this.business_hours.any { it.is_open_now }
+    }
+
+    private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
+        val geocoder = Geocoder(context, Locale.getDefault())
+
+        // Attempt to get the list of addresses based on the address string
+        val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
+
+        if (!addressList.isNullOrEmpty()) {
+            // If the list is not null or empty, get the first address
+            val address = addressList[0]
+            val latitude = address.latitude
+            val longitude = address.longitude
+            return Pair(latitude, longitude)
+        } else {
+            // Handle the case where the address could not be geocoded
+            Log.e("Geocoding", "Address not found or geocoding failed.")
+        }
+
+        return null // Return null if geocoding fails or no results are found
+    }
+
+    fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        // Radius of the Earth in meters
+        val R = 6371000.0
+
+        // Convert latitude and longitude from degrees to radians
+        val lat1Rad = Math.toRadians(lat1)
+        val lng1Rad = Math.toRadians(lng1)
+        val lat2Rad = Math.toRadians(lat2)
+        val lng2Rad = Math.toRadians(lng2)
+
+        // Difference in coordinates
+        val dLat = lat2Rad - lat1Rad
+        val dLng = lng2Rad - lng1Rad
+
+        // Haversine formula
+        val a = sin(dLat / 2).pow(2) + cos(lat1Rad) * cos(lat2Rad) * sin(dLng / 2).pow(2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        // Distance in meters
+        return R * c
+    }
+
+    fun sortRestaurantsByDistance(
+        restaurants: List<Business>,
+        currentLat: Double,
+        currentLng: Double
+    ): List<Business> {
+        return restaurants.sortedBy { business ->
+            // Get LatLng for the business address
+            val latLng = getLatLngFromAddress(requireContext(), "${business.location.address1}, ${business.location.city}, ${business.location.country}")
+
+            // If LatLng is null, assign a large value to ensure it's sorted last
+            val distance = if (latLng != null) {
+                calculateDistance(currentLat, currentLng, latLng.first, latLng.second)
+            } else {
+                Double.MAX_VALUE  // Business without valid coordinates will be last
+            }
+
+            distance
         }
     }
 

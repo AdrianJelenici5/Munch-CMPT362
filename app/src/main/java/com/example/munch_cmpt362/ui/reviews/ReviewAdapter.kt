@@ -58,11 +58,6 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
                     openOrClosed.setImageResource(R.drawable.red_dot)
                 }
             }
-//            openNowStatus.text = if (hours.is_open_now) "Yes" else "No"
-//            openNowStatus.setTextColor(
-//                if (hours.is_open_now) android.graphics.Color.GREEN
-//                else android.graphics.Color.RED
-//            )
 
             nameTextView.text = "${restaurant.name} ${price}"
             val address = restaurant.location.address1
@@ -78,10 +73,6 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
                 itemView.context.startActivity(intent)
             }
 
-//            openWebsiteButton.setOnClickListener {
-//                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.url))
-//                itemView.context.startActivity(intent)
-//            }
         }
 
     }
