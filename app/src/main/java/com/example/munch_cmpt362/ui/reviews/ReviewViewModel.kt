@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.ui.swipe
+package com.example.munch_cmpt362.ui.reviews
 
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -12,26 +12,30 @@ import com.example.munch_cmpt362.OpenHours
 import com.example.munch_cmpt362.YelpResponse
 import com.example.munch_cmpt362.data.remote.api.ApiHelper
 
-class SwipeViewModel : ViewModel() {
+class ReviewViewModel : ViewModel() {
     private val _restaurants = MutableLiveData<List<Business>>()
     val restaurants: LiveData<List<Business>> = _restaurants
 
     private var dataFetched = false
 
-    fun fetchRestaurants(isFakeData: Boolean = false, latitude: Double, longitude: Double) {
-        Log.d("XD:", "XD: SwipeViewModel | Lat: $latitude, Long: $longitude")
+    fun fetchRestaurants(latitude: Double, longitude: Double) {
+
+        Log.d("XD:", "XD: ReviewViewModel | Lat: $latitude, Long: $longitude")
         if (dataFetched) return
-        if(isFakeData) {
-            _restaurants.value = loadFakeBusinesses().businesses
-        }
-        else {
-            ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
-                response?.businesses?.let {
-                    _restaurants.value = it
-                    dataFetched = true
-                }
+        Log.d("XD:", "XD: passed if case")
+
+        ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+            Log.d("XD:", "XD: Received response: $response")
+            response?.businesses?.let {
+                Log.d("XD:", "XD: Updating restaurants LiveData")
+                _restaurants.value = it
+                dataFetched = true
             }
         }
+
+//        _restaurants.value = loadFakeBusinesses().businesses
+//        Log.d("XD:", "XD: Inside")
+
     }
 
     private fun loadFakeBusinesses(): YelpResponse {
@@ -111,4 +115,5 @@ class SwipeViewModel : ViewModel() {
         val fakeResponse = YelpResponse(businesses = fakeBusinesses)
         return fakeResponse
     }
+
 }

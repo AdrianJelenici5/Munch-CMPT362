@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <!-- Text Section -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Name Text -->
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Name"
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:paddingBottom="4dp" />
+
+        <!-- Location Text -->
+        <TextView
+            android:id="@+id/tvLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textSize="14sp"
+            android:textColor="#666666" />
+
+        <TextView
+            android:id="@+id/tvReview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Review"
+            android:textSize="14sp"
+            android:textColor="#666666" />
+    </LinearLayout>
+
+    <!-- Image Section -->
+    <ImageView
+        android:id="@+id/ivImage"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@drawable/ic_website"
+        android:contentDescription="Image"
+        android:layout_marginStart="8dp"
+        android:scaleType="centerCrop"/>
+</LinearLayout>

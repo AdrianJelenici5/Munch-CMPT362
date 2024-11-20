@@ -108,6 +108,7 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
 
     override fun onLocationChanged(location: Location) {
         swipeFragment.updateLocation(location.latitude, location.longitude)
+        reviewsFragment.updateLocation(location.latitude, location.longitude)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
