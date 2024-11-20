@@ -50,7 +50,7 @@ class ReviewsFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
-        reviewAdapter = ReviewAdapter(emptyList())
+        reviewAdapter = ReviewAdapter(emptyList(), lat, lng)
         recyclerView.adapter = reviewAdapter
 
         sortTypeSpinner = view.findViewById<Spinner>(R.id.sort_spinner)
@@ -77,7 +77,7 @@ class ReviewsFragment : Fragment() {
 //            Log.d("XD:", "Received restaurants: $restaurants")
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = sortRestaurants(restaurants)
-                reviewAdapter = ReviewAdapter(sortedRestaurants)
+                reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
                 recyclerView.adapter = reviewAdapter
             } else {
 //                noMoreRestaurantsText.visibility = View.VISIBLE
@@ -102,7 +102,7 @@ class ReviewsFragment : Fragment() {
             2 -> restaurants.sortedBy { it.name } // Sort by descending rating
             3 -> restaurants.sortedBy { it.price?.length ?: Int.MAX_VALUE }
             4 -> restaurants.sortedBy { it.categories[0].title }
-            5 -> restaurants.sortedBy { it.isOpenNow() }
+            5 -> restaurants.sortedByDescending { it.isOpenNow() }
             6 -> sortRestaurantsByDistance(restaurants, lat, lng)
             else -> restaurants
         }
@@ -150,6 +150,9 @@ class ReviewsFragment : Fragment() {
         val a = sin(dLat / 2).pow(2) + cos(lat1Rad) * cos(lat2Rad) * sin(dLng / 2).pow(2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
+//        Log.d("XD:", "XD: current: (${lng1}, ${lng1}) vs. (${lng2}, ${lng2}) : restaurant")
+//        Log.d("XD:", "XD: distance: ${R*c}")
+
         // Distance in meters
         return R * c
     }
@@ -179,7 +182,7 @@ class ReviewsFragment : Fragment() {
         reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = sortRestaurants(restaurants)
-                reviewAdapter = ReviewAdapter(sortedRestaurants)
+                reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
                 recyclerView.adapter = reviewAdapter
             } else {
 //                noMoreRestaurantsText.visibility = View.VISIBLE

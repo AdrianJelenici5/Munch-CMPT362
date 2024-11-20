@@ -59,10 +59,18 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
+                android:id="@+id/restaurantType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Type"
+                android:textSize="12sp"
+                android:textColor="#666666" />
+
+            <TextView
                 android:id="@+id/restaurantInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Type | Location"
+                android:text="Distance | Location"
                 android:textSize="12sp"
                 android:textColor="#666666" />
 
@@ -79,8 +87,8 @@
         <!-- Image Section -->
         <ImageView
             android:id="@+id/ivImage"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="77dp"
+            android:layout_height="77dp"
             android:src="@drawable/ic_website"
             android:contentDescription="Image"
             android:layout_marginStart="8dp"
