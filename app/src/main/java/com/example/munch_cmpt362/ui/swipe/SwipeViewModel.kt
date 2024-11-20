@@ -27,6 +27,8 @@ class SwipeViewModel : ViewModel() {
 
     private var dataFetched = false
 
+    private val excludeRestaurantIds = mutableSetOf<String>()
+
     fun fetchRestaurants(isFakeData: Boolean = false, latitude: Double, longitude: Double, restaurantDao: RestaurantDao) {
         Log.d("JP:", "dataFetched value ${dataFetched}")
         if (dataFetched) return
@@ -59,16 +61,70 @@ class SwipeViewModel : ViewModel() {
                         CoroutineScope(Dispatchers.IO).launch {
                             restaurantDao.insertEntry(restaurantEntry)
                         }
+                        Log.d("JP:", "rest id  ${business.id}")
+                        excludeRestaurantIds.add(business.id)
                     }
+
+                    _restaurants.value = businesses
                 }
             }
 
-            viewModelScope.launch {
-                restaurantDao.getAllEntries().collect { restaurantEntries ->
-                    _restaurants.value = restaurantEntries.map { it.toBusiness() }
+//            viewModelScope.launch {
+//                restaurantDao.getAllEntries().collect { restaurantEntries ->
+//                    _restaurants.value = restaurantEntries.map { it.toBusiness()
+//                    }
+//                }
+//            }
+        }
+    }
+
+    fun fetchRestaurantsWithExcludeList(latitude: Double, longitude: Double, restaurantDao: RestaurantDao, onResult: (Boolean) -> Unit ){
+//        Log.d("JP:", "expand API called to fetch")
+//        Log.d("JP:", "exclude list value ${excludeRestaurantIds}")
+
+        ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+            response?.businesses?.let { businesses ->
+                val filteredBusinesses = businesses.filterNot { excludeRestaurantIds.contains(it.id) }
+                if (filteredBusinesses.isNotEmpty()) {
+
+                    // Convert each Business object into a RestaurantEntry and insert it into the database
+                    filteredBusinesses.forEach { business ->
+                        val restaurantEntry = RestaurantEntry(
+                            restaurantId = business.id,
+                            name = business.name,
+                            rating = business.rating,
+                            reviewCount = business.review_count,
+                            price = business.price,
+                            location = business.location,
+                            phone = business.phone,
+                            category = business.categories[0],
+                            websiteUrl = business.url,
+                            imageUrl = business.image_url,
+                            businessHours = business.business_hours
+                        )
+
+                        // Insert into the database on a background thread
+                        CoroutineScope(Dispatchers.IO).launch {
+                            restaurantDao.insertEntry(restaurantEntry)
+                        }
+                    }
+                    _restaurants.value = filteredBusinesses
+                    onResult(false)
+                } else {
+                    Log.d("JP:", "No new restaurants to fetch, all are excluded.")
+                    onResult(true)
                 }
             }
         }
+
+        // Collect updated restaurant entries from the database
+//        viewModelScope.launch {
+//            restaurantDao.getAllEntries().collect { restaurantEntries ->
+//                // Filter out excluded restaurants before posting
+//                val validRestaurants = restaurantEntries.filterNot { excludeRestaurantIds.contains(it.restaurantId) }
+//                _restaurants.value = validRestaurants.map { it.toBusiness() }
+//            }
+//        }
     }
 
     fun queueRestaurantForRemoval(restaurantId: String) {

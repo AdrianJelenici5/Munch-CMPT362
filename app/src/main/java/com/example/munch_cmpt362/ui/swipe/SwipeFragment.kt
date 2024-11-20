@@ -7,7 +7,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -24,6 +26,11 @@ import kotlinx.coroutines.launch
 import munch_cmpt362.database.MunchDatabase
 import munch_cmpt362.database.restaurants.RestaurantDao
 import munch_cmpt362.database.restaurants.RestaurantRepository
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class SwipeFragment : Fragment() {
     private lateinit var cardStackView: CardStackView
@@ -32,6 +39,7 @@ class SwipeFragment : Fragment() {
     private lateinit var decisionIcon: ImageView
     private lateinit var cardStackLayoutManager: CardStackLayoutManager
     private lateinit var restaurantAdapter: RestaurantAdapter
+    private lateinit var expandSearchButton: Button
 
     private val swipeViewModel: SwipeViewModel by viewModels()
 
@@ -55,6 +63,12 @@ class SwipeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        savedInstanceState?.let {
+            val isButtonVisible = it.getBoolean("expandSearchButtonVisible", false)
+            expandSearchButton.visibility = if (isButtonVisible) View.VISIBLE else View.GONE
+        }
+
         swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng, databaseDao)
     }
 
@@ -63,14 +77,74 @@ class SwipeFragment : Fragment() {
         cardStackView = view.findViewById(R.id.card_stack_view)
         noMoreRestaurantsText = view.findViewById(R.id.noMoreRestaurantsText)
         decisionIcon = view.findViewById(R.id.decision_icon)
+        expandSearchButton = view.findViewById(R.id.expandSearchButton)
         restaurantAdapter = RestaurantAdapter()
         cardStackView.adapter = restaurantAdapter
+
+        expandSearchButton.setOnClickListener {
+            expandSearch()
+        }
     }
 
     private fun initializeRepository() {
         database = MunchDatabase.getInstance(requireContext())
         databaseDao = database.restaurantDao
         repository = RestaurantRepository(databaseDao)
+    }
+
+    fun expandSearch() {
+        expandSearchButton.visibility = View.GONE
+        noMoreRestaurantsText.visibility = View.GONE
+
+        Log.d("JP:", "old coords: ${lat}, ${lng}")
+        val randomCoord = generateRandomCoordinate(lat, lng, 10000.0)
+
+        // Update lat/lng with the new randomized location
+        val newLat = randomCoord.first
+        val newLng = randomCoord.second
+
+        Log.d("JP:", "new coords: ${newLat}, ${newLng}")
+
+        swipeViewModel.fetchRestaurantsWithExcludeList(newLat, newLng, databaseDao) { flag ->
+            Log.d("JP:", "flag value: $flag")
+            if (flag) {
+                noMoreRestaurantsText.visibility = View.VISIBLE
+                val layoutParams = noMoreRestaurantsText.layoutParams as RelativeLayout.LayoutParams
+                layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                noMoreRestaurantsText.layoutParams = layoutParams
+                expandSearchButton.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun generateRandomCoordinate(lat: Double, lng: Double, radiusMeters: Double): Pair<Double, Double> {
+        val earthRadius = 6371000.0 // Earth radius in meters
+
+        // Randomize distance and angle
+        val randomDistance = sqrt(Math.random()) * radiusMeters // sqrt for uniform distribution
+        val randomAngle = Math.random() * 2 * Math.PI // Angle in radians (0 to 2π)
+
+        // Convert center point to radians
+        val latRad = Math.toRadians(lat)
+        val lngRad = Math.toRadians(lng)
+
+        // Calculate new latitude in radians
+        val newLatRad = asin(
+            sin(latRad) * cos(randomDistance / earthRadius) +
+                    cos(latRad) * sin(randomDistance / earthRadius) * cos(randomAngle)
+        )
+
+        // Calculate new longitude in radians
+        val newLngRad = lngRad + atan2(
+            sin(randomAngle) * sin(randomDistance / earthRadius) * cos(latRad),
+            cos(randomDistance / earthRadius) - sin(latRad) * sin(newLatRad)
+        )
+
+        // Convert back to degrees
+        val newLat = Math.toDegrees(newLatRad)
+        val newLng = Math.toDegrees(newLngRad)
+
+        return Pair(newLat, newLng)
     }
 
     private fun setupCardStackView() {
@@ -136,6 +210,7 @@ class SwipeFragment : Fragment() {
 
         if (cardStackLayoutManager.topPosition == restaurantAdapter.itemCount) {
             noMoreRestaurantsText.visibility = View.VISIBLE
+            expandSearchButton.visibility = View.VISIBLE
         }
     }
 
@@ -203,5 +278,10 @@ class SwipeFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         postTop3Online()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("expandSearchButtonVisible", expandSearchButton.visibility == View.VISIBLE)
     }
 }

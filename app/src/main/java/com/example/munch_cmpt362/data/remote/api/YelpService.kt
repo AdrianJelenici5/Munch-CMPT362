@@ -14,7 +14,7 @@ interface YelpService {
         @Query("longitude") longitude: Double,
         @Query("radius") radius: Int = 1000,
         @Query("term") term: String = "restaurant",
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 2
     ): Call<YelpResponse>
 
     @GET("v3/businesses/search")

@@ -34,12 +34,12 @@
         android:id="@+id/noMoreRestaurantsText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
         android:text="No more nearby restaurants, come back later."
         android:textSize="16sp"
         android:textColor="@android:color/darker_gray"
         android:visibility="gone"
-        android:layout_below="@id/myLocationText"
+        android:layout_above="@id/expandSearchButton"
         android:paddingBottom="16dp" />
 
     <com.yuyakaido.android.cardstackview.CardStackView
@@ -58,5 +58,15 @@
         android:layout_centerInParent="true"
         android:src="@drawable/ic_thumbs_up"
     android:visibility="gone" />
+
+    <Button
+        android:id="@+id/expandSearchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:text="Expand Search"
+        android:textColor="@android:color/white"
+        android:textStyle="bold" />
 
 </RelativeLayout>
