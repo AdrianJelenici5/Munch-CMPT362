@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Munch_Cmpt362</string>
+
+    <string-array name="ui_sort_type_spinner">
+        <item>Order By: Highest Review Score</item>
+        <item>Order By: Most Reviews</item>
+        <item>Order By: Name</item>
+    </string-array>
+
+
+
 </resources>

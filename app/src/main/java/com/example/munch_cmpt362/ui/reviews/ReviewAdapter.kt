@@ -19,14 +19,19 @@ import com.example.munch_cmpt362.ui.swipe.RestaurantAdapter.RestaurantViewHolder
 
 class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
+    fun updateData(newRestaurants: List<Business>) {
+        restaurants = newRestaurants
+        notifyDataSetChanged()  // Notify the adapter that the data has changed
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
-        Log.d("XD:", "XD: onCreateViewHolder")
+        // Log.d("XD:", "XD: onCreateViewHolder")
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_restaurant_review, parent, false)
         return ReviewViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
-        Log.d("XD:", "XD: onBindViewHolder")
+        // Log.d("XD:", "XD: onBindViewHolder")
         val restaurant = restaurants[position]
         holder.bind(restaurant)
     }
@@ -36,15 +41,19 @@ class ReviewAdapter(private var restaurants: List<Business>) : RecyclerView.Adap
     class ReviewViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val nameTextView: TextView = itemView.findViewById(R.id.tvName)
+        private val locationTextView: TextView = itemView.findViewById(R.id.tvLocation)
         private val ratingTextView: TextView = itemView.findViewById(R.id.tvReview)
         private val imageView: ImageView = itemView.findViewById(R.id.ivImage)
 
         fun bind(restaurant: Business) {
-            Log.d("XD:", "XD: binding")
+            // Log.d("XD:", "XD: binding")
             nameTextView.text = restaurant.name
             ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
-            }
+            Glide.with(itemView.context).load(restaurant.image_url).into(imageView)
+            //locationTextView.text = restaurant.location
         }
+
+    }
 
 
 }
