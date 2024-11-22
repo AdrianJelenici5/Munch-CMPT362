@@ -8,8 +8,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ListView
 import androidx.annotation.UiThread
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.ui.group.datadaoview.Group
 import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabase
@@ -39,7 +41,6 @@ class GroupMembersFragment: Fragment() {
     //private var STUB_GROUP_ID = 1L
 
     private lateinit var allUserGroupMembers: List<User>
-    lateinit var group: Group
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,11 +64,11 @@ class GroupMembersFragment: Fragment() {
         groupViewModelFactory = GroupViewModelFactory(groupRepository)
         groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(
             GroupViewModel::class.java)
-        updateMembers()
 
+        updateMembers()
         // Pressing add members button
         addGroupMemberButton.setOnClickListener(){
-            groupViewModel.currentGroupAdding = group
+//            findNavController().navigate(R.id.action_groupMembersFragment_to_addGroupMemberDialog)
             val addGroupMemberDialog = AddGroupMemberDialog()
             addGroupMemberDialog.show(parentFragmentManager, "add group member")
 
@@ -75,6 +76,7 @@ class GroupMembersFragment: Fragment() {
             parentFragmentManager.executePendingTransactions()
             addGroupMemberDialog.dialog?.setOnDismissListener {
                 updateMembers()
+                (parentFragmentManager.findFragmentByTag("add group member") as DialogFragment).dismiss()
             }
         }
 
@@ -83,7 +85,7 @@ class GroupMembersFragment: Fragment() {
 
     fun updateMembers(){
         CoroutineScope(IO).launch{
-            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(group.groupID)
+            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(groupViewModel.clickedGroup.value!!.groupID)
             println("THIS IS GROUP: $allUserGroupMembers")
             activity?.runOnUiThread(){
                 myGroupMemberListAdapter.replace(allUserGroupMembers)

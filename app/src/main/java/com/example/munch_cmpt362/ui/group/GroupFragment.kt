@@ -9,6 +9,7 @@ import android.widget.ListView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.ui.group.datadaoview.Counter
 import com.example.munch_cmpt362.ui.group.datadaoview.Group
@@ -60,7 +61,6 @@ class GroupFragment: Fragment() {
         groupDatabaseDao = groupDatabase.groupDatabaseDao
         // get our User and stub into database
         var user = User()
-        //user.userName = "Gabriel"
         user.userName = arrayName.get(Random.nextInt(arrayName.size))
         CoroutineScope(IO).launch {
             groupDatabaseDao.insertStubUser(user)
@@ -92,10 +92,14 @@ class GroupFragment: Fragment() {
             // Get group object
             var group: Group = myGroupListAdapter.getItem(position)
             // Start the GROUP MEMBERS fragment, initialize group object in it
-            val groupMemberFragment = GroupMembersFragment()
-            groupMemberFragment.group = group
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(android.R.id.content, groupMemberFragment).addToBackStack("group tag").commit()
+//            val groupMemberFragment = GroupMembersFragment()
+//            groupMemberFragment.group = group
+//            requireActivity().supportFragmentManager.beginTransaction()
+//                .replace(android.R.id.content, groupMemberFragment).addToBackStack("group tag").commit()
+
+            // Add clicked group to viewmodel
+            groupViewModel.clickedGroup.value = group
+            findNavController().navigate(R.id.action_mainFragment_to_groupMembersFragment)
         }
 
 

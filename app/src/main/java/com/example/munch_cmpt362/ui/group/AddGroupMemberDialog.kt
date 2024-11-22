@@ -43,9 +43,9 @@ class AddGroupMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
                 // create group entry for added member
                 var group = Group()
                 // Add the user as the member
-                group.groupID = groupViewModel.currentGroupAdding.groupID
+                group.groupID = groupViewModel.clickedGroup.value!!.groupID
                 group.userID = editText.text.toString().toLong()
-                group.groupName = groupViewModel.currentGroupAdding.groupName
+                group.groupName = groupViewModel.clickedGroup.value!!.groupName
                 groupViewModel.insertGroup(group)
                 // Try to update list
             }

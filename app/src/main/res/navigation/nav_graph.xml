@@ -54,5 +54,13 @@
             app:destination="@id/loginFragment"
             app:popUpTo="@id/mainFragment"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_mainFragment_to_groupMembersFragment"
+            app:destination="@id/groupMembersFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/groupMembersFragment"
+        android:name="com.example.munch_cmpt362.ui.group.GroupMembersFragment"
+        android:label="GroupMembersFragment" />
+
 </navigation>
