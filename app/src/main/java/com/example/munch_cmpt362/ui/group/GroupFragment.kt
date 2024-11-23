@@ -151,20 +151,20 @@ class GroupFragment: Fragment() {
             }
         }
 //
-//        myGroupListView.setOnItemClickListener(){ parent, view, position, id ->
-//            Toast.makeText(requireActivity(), "Stub to display members", Toast.LENGTH_SHORT).show()
-//            // Get group object
-//            var group: Group = myGroupListAdapter.getItem(position)
-//            // Start the GROUP MEMBERS fragment, initialize group object in it
-////            val groupMemberFragment = GroupMembersFragment()
-////            groupMemberFragment.group = group
-////            requireActivity().supportFragmentManager.beginTransaction()
-////                .replace(android.R.id.content, groupMemberFragment).addToBackStack("group tag").commit()
-//
-//            // Add clicked group to viewmodel
-//            groupViewModel.clickedGroup.value = group
-//            findNavController().navigate(R.id.action_mainFragment_to_groupMembersFragment)
-//        }
+        myGroupListView.setOnItemClickListener(){ parent, view, position, id ->
+            Toast.makeText(requireActivity(), "Stub to display members", Toast.LENGTH_SHORT).show()
+            // Get group object
+            var groupFb: GroupFb = myGroupFbListAdapter.getItem(position)
+            // Start the GROUP MEMBERS fragment, initialize group object in it
+//            val groupMemberFragment = GroupMembersFragment()
+//            groupMemberFragment.group = group
+//            requireActivity().supportFragmentManager.beginTransaction()
+//                .replace(android.R.id.content, groupMemberFragment).addToBackStack("group tag").commit()
+
+            // Add clicked group to viewmodel
+            myGroupFbViewModel.clickedGroup.value = groupFb
+            findNavController().navigate(R.id.action_mainFragment_to_groupMembersFragment)
+        }
 
 
         return view

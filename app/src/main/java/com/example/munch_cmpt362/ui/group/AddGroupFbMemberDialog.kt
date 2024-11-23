@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -11,28 +12,32 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.ui.auth.AuthViewModel
-import com.example.munch_cmpt362.ui.group.datadaoview.Counter
 import com.example.munch_cmpt362.ui.group.datadaoview.Group
-import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabase
 import com.example.munch_cmpt362.ui.group.datadaoview.GroupViewModel
 import com.example.munch_cmpt362.ui.group.fb.GroupFbViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
-class AddGroupFbDialog: DialogFragment(), DialogInterface.OnClickListener {
+class AddGroupFbMemberDialog: DialogFragment(), DialogInterface.OnClickListener {
     private lateinit var editText: EditText
+    private lateinit var groupFbViewModel: GroupFbViewModel
+
+//    private var STUB_USER_ID = 1L
+//    private var STUB_GROUP_ID = 1L
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         lateinit var ret: Dialog
+        groupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
         val builder = AlertDialog.Builder(requireActivity())
         val view: View = requireActivity().layoutInflater.inflate(R.layout.add_group_dialog,null)
         editText = view.findViewById(R.id.add_group_edittext)
+        editText.hint = ("Add a member")
         builder.setView(view)
-        builder.setTitle("Add Group")
+        builder.setTitle("Add Group Member")
         builder.setPositiveButton("ok", this)
         builder.setNegativeButton("cancel", this)
         ret = builder.create()
@@ -43,27 +48,21 @@ class AddGroupFbDialog: DialogFragment(), DialogInterface.OnClickListener {
         if (item == DialogInterface.BUTTON_POSITIVE) {
             println("GABRIEL CHENG : ${editText.text}")
             if(editText.text.toString() != "") {
-                val authViewModel = ViewModelProvider(requireActivity()).get(AuthViewModel::class.java)
-                val userID = authViewModel.returnID()!!.uid
-
-                CoroutineScope(IO).launch{
-                    val ref = Firebase.firestore.collection("group").document()
-                    val list = ArrayList<String>()
-                    list.add(userID)
-                    val groupSet = hashMapOf(
-                        "groupId" to ref.id,
-                        "groupName" to editText.text.toString(),
-                        "listOfRestaurants" to ArrayList<String>(),
-                        "listOfUserIds" to list,
-                    )
-                    ref.set(groupSet)
-                    val myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
-                    val groupFb = GroupFb()
-                    groupFb.groupId = ref.id
-                    groupFb.groupName = editText.text.toString()
-                    groupFb.listOfRestaurants = ArrayList<String>()
-                    groupFb.listOfUserIds = list
-                    myGroupFbViewModel.groupFb.postValue(groupFb)
+                // get group Id and list of members to add
+                var groupId = groupFbViewModel.clickedGroup.value!!.groupId
+                val database = Firebase.firestore
+                CoroutineScope(IO).launch {
+                    database.collection("group").whereEqualTo("groupId", groupId).get()
+                        .addOnSuccessListener { documents ->
+                            // There should only be one document
+                            for (document in documents) {
+                                Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
+                                var listUsers = document.data["listOfUserIds"] as MutableList<String>
+                                listUsers.add(editText.text.toString())
+                                database.collection("group").document(groupId)
+                                    .update("listOfUserIds", listUsers)
+                            }
+                        }
                 }
             }
             Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()
@@ -71,5 +70,4 @@ class AddGroupFbDialog: DialogFragment(), DialogInterface.OnClickListener {
             Toast.makeText(activity, "cancel clicked", Toast.LENGTH_LONG).show()
         }
     }
-
 }

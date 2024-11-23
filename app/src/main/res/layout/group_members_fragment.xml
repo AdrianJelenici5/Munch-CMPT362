@@ -16,16 +16,17 @@
     <ListView
         android:id="@+id/Members_listview"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="match_parent"
         android:layout_below="@id/Members_title"
+        android:layout_above="@id/Add_members_button"
         />
 
     <Button
         android:id="@+id/Add_members_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/Members_listview"
         android:layout_centerInParent="true"
+        android:layout_alignParentBottom="true"
         android:text="Add Members" />
 
 
