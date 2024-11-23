@@ -94,9 +94,29 @@ class GroupMembersFragment: Fragment() {
             // wait
             parentFragmentManager.executePendingTransactions()
             addGroupMemberDialog.dialog?.setOnDismissListener {
-                // waits for dialog to finish before calling update again
-                sleep(1000L)
-                updateMembers()
+                if(myGroupFbViewModel.addedUser.value != null){
+                    var addedUser = myGroupFbViewModel.addedUser.value
+                    // reset added user
+                    myGroupFbViewModel.addedUser.value = null
+                    // get group Id and list of members to add
+                    var groupId = myGroupFbViewModel.clickedGroup.value!!.groupId
+                    val database = Firebase.firestore
+                    CoroutineScope(IO).launch {
+                        database.collection("group").whereEqualTo("groupId", groupId).get()
+                            .addOnSuccessListener { documents ->
+                                // There should only be one document
+                                for (document in documents) {
+                                    Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
+                                    var listUsers =
+                                        document.data["listOfUserIds"] as MutableList<String>
+                                    listUsers.add(addedUser!!)
+                                    database.collection("group").document(groupId)
+                                        .update("listOfUserIds", listUsers)
+                                }
+                                updateMembers()
+                            }
+                    }
+                }
                 (parentFragmentManager.findFragmentByTag("add group member") as DialogFragment).dismiss()
             }
         }
@@ -118,7 +138,6 @@ class GroupMembersFragment: Fragment() {
         CoroutineScope(IO).launch {
             // get members in the group
             val groupFb = myGroupFbViewModel.clickedGroup.value!!
-            val mutList: MutableList<Users> = ArrayList()
             val database = Firebase.firestore
             database.collection("group").whereEqualTo("groupId", groupFb.groupId).get()
                 .addOnSuccessListener { documents ->

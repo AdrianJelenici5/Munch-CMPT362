@@ -48,22 +48,7 @@ class AddGroupFbMemberDialog: DialogFragment(), DialogInterface.OnClickListener 
         if (item == DialogInterface.BUTTON_POSITIVE) {
             println("GABRIEL CHENG : ${editText.text}")
             if(editText.text.toString() != "") {
-                // get group Id and list of members to add
-                var groupId = groupFbViewModel.clickedGroup.value!!.groupId
-                val database = Firebase.firestore
-                CoroutineScope(IO).launch {
-                    database.collection("group").whereEqualTo("groupId", groupId).get()
-                        .addOnSuccessListener { documents ->
-                            // There should only be one document
-                            for (document in documents) {
-                                Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
-                                var listUsers = document.data["listOfUserIds"] as MutableList<String>
-                                listUsers.add(editText.text.toString())
-                                database.collection("group").document(groupId)
-                                    .update("listOfUserIds", listUsers)
-                            }
-                        }
-                }
+                groupFbViewModel.addedUser.value = editText.text.toString()
             }
             Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()
         } else if (item == DialogInterface.BUTTON_NEGATIVE) {
