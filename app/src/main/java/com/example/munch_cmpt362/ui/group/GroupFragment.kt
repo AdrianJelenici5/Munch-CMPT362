@@ -108,6 +108,7 @@ class GroupFragment: Fragment() {
                 }
         }
 
+        // Adding groups to grouplistview
         CoroutineScope(IO).launch {
             database.collection("group").whereArrayContains("listOfUserIds", userID).get()
                 .addOnSuccessListener { documents ->
@@ -141,11 +142,59 @@ class GroupFragment: Fragment() {
 
             parentFragmentManager.executePendingTransactions()
             addGroupDialog.dialog?.setOnDismissListener {
-                if(myGroupFbViewModel.groupFb.value != null){
-                    groupFbList.add(myGroupFbViewModel.groupFb.value!!)
-                    myGroupFbListAdapter.replace(groupFbList)
-                    myGroupFbListAdapter.notifyDataSetChanged()
-                    myGroupFbViewModel.groupFb.value = null
+                if(myGroupFbViewModel.groupAddedName.value != null){
+                    // Use groupAddedName and update database and list
+                    val authViewModel = ViewModelProvider(requireActivity()).get(AuthViewModel::class.java)
+                    val userID = authViewModel.returnID()!!.uid
+
+                    CoroutineScope(IO).launch{
+                        // Get users list of restaurants and add it to group list
+                        val userPrefRef = Firebase.firestore.collection("user-preference").document(userID).get()
+                            .addOnSuccessListener { document ->
+                                val listRestaurant: MutableList<String> = ArrayList()
+                                val rest1 = document.data!!["restaurant_1"].toString()
+                                val rest2 = document.data!!["restaurant_2"].toString()
+                                val rest3 = document.data!!["restaurant_3"].toString()
+                                if(rest1 != ""){
+                                    listRestaurant.add(rest1)
+                                }
+                                if(rest2 != ""){
+                                    listRestaurant.add(rest2)
+                                }
+                                if(rest3 != ""){
+                                    listRestaurant.add(rest3)
+                                }
+
+                                // Add list to group database
+                                val ref = Firebase.firestore.collection("group").document()
+                                val list = ArrayList<String>()
+                                list.add(userID)
+                                val groupSet = hashMapOf(
+                                    "groupId" to ref.id,
+                                    "groupName" to myGroupFbViewModel.groupAddedName.value,
+                                    "listOfRestaurants" to listRestaurant,
+                                    "listOfUserIds" to list,
+                                )
+                                ref.set(groupSet)
+                                val groupFb = GroupFb()
+                                groupFb.groupId = ref.id
+                                groupFb.groupName = myGroupFbViewModel.groupAddedName.value!!
+                                groupFb.listOfRestaurants = listRestaurant
+                                groupFb.listOfUserIds = list
+                                //myGroupFbViewModel.groupFb.postValue(groupFb)
+                                groupFbList.add(groupFb)
+                                myGroupFbListAdapter.replace(groupFbList)
+                                myGroupFbListAdapter.notifyDataSetChanged()
+                                myGroupFbViewModel.groupAddedName.value = null
+                            }
+                            .addOnFailureListener { exception ->
+                                Log.w("TAG", "Error getting documents: ", exception)
+                            }
+                    }
+//                    groupFbList.add(myGroupFbViewModel.groupFb.value!!)
+//                    myGroupFbListAdapter.replace(groupFbList)
+//                    myGroupFbListAdapter.notifyDataSetChanged()
+//                    myGroupFbViewModel.groupAddedName.value = null
                 }
                 (parentFragmentManager.findFragmentByTag("add group") as DialogFragment).dismiss()
             }

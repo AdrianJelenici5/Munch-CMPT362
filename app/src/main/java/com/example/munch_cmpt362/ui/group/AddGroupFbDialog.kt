@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -42,29 +43,10 @@ class AddGroupFbDialog: DialogFragment(), DialogInterface.OnClickListener {
     override fun onClick(dialog: DialogInterface, item: Int) {
         if (item == DialogInterface.BUTTON_POSITIVE) {
             println("GABRIEL CHENG : ${editText.text}")
+            // Add new group document to group collection
             if(editText.text.toString() != "") {
-                val authViewModel = ViewModelProvider(requireActivity()).get(AuthViewModel::class.java)
-                val userID = authViewModel.returnID()!!.uid
-
-                CoroutineScope(IO).launch{
-                    val ref = Firebase.firestore.collection("group").document()
-                    val list = ArrayList<String>()
-                    list.add(userID)
-                    val groupSet = hashMapOf(
-                        "groupId" to ref.id,
-                        "groupName" to editText.text.toString(),
-                        "listOfRestaurants" to ArrayList<String>(),
-                        "listOfUserIds" to list,
-                    )
-                    ref.set(groupSet)
-                    val myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
-                    val groupFb = GroupFb()
-                    groupFb.groupId = ref.id
-                    groupFb.groupName = editText.text.toString()
-                    groupFb.listOfRestaurants = ArrayList<String>()
-                    groupFb.listOfUserIds = list
-                    myGroupFbViewModel.groupFb.postValue(groupFb)
-                }
+                val myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
+                myGroupFbViewModel.groupAddedName.value = editText.text.toString()
             }
             Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()
         } else if (item == DialogInterface.BUTTON_NEGATIVE) {

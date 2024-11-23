@@ -107,9 +107,30 @@ class GroupMembersFragment: Fragment() {
                                 // There should only be one document
                                 for (document in documents) {
                                     Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
-                                    var listUsers =
-                                        document.data["listOfUserIds"] as MutableList<String>
+                                    var listUsers = document.data["listOfUserIds"] as MutableList<String>
                                     listUsers.add(addedUser!!)
+                                    // add user restaurant preferences too
+                                    val userPrefRef = Firebase.firestore.collection("user-preference").document(addedUser).get()
+                                        .addOnSuccessListener { userPref ->
+                                            val listRestaurant: MutableList<String> = ArrayList()
+                                            val rest1 = userPref.data!!["restaurant_1"].toString()
+                                            val rest2 = userPref.data!!["restaurant_2"].toString()
+                                            val rest3 = userPref.data!!["restaurant_3"].toString()
+                                            if (rest1 != "null") {
+                                                listRestaurant.add(rest1)
+                                            }
+                                            if (rest2 != "null") {
+                                                listRestaurant.add(rest2)
+                                            }
+                                            if (rest3 != "null") {
+                                                listRestaurant.add(rest3)
+                                            }
+                                            var oldGroupRestaurant = document.data["listOfRestaurants"] as MutableList<String>
+                                            // get distinct items from both list
+                                            var newGroupRestaurant = oldGroupRestaurant.union(listRestaurant).toMutableList()
+                                            database.collection("group").document(groupId)
+                                                .update("listOfRestaurants", newGroupRestaurant)
+                                        }
                                     database.collection("group").document(groupId)
                                         .update("listOfUserIds", listUsers)
                                 }

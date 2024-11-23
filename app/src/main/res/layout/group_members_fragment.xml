@@ -16,9 +16,8 @@
     <ListView
         android:id="@+id/Members_listview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="300dp"
         android:layout_below="@id/Members_title"
-        android:layout_above="@id/Add_members_button"
         />
 
     <Button
@@ -26,8 +25,34 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:layout_alignParentBottom="true"
+        android:layout_below="@id/Members_listview"
         android:text="Add Members" />
 
+    <TextView
+        android:id="@+id/Voting_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/Add_members_button"
+        android:text="Voting"
+        android:textSize="18sp"
+        />
+
+    <ListView
+        android:id="@+id/Voting_listview"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_below="@id/Voting_title"
+        />
+
+    <TextView
+        android:id="@+id/Most_voted"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/Voting_listview"
+        android:text="Most Voted: "
+        android:textSize="18sp"
+        />
 
 </RelativeLayout>
