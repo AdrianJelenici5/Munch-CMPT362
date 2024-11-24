@@ -152,6 +152,7 @@ class SwipeViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     // Try to get unseen restaurants from cache first
                     val cachedRestaurants = cacheManager.getNextBatchOfRestaurants(10)
+                    Log.d("JP:", "expand cache, ${cachedRestaurants}.")
                     if (cachedRestaurants.isNotEmpty()) {
                         withContext(Dispatchers.Main) {
                             _restaurants.value = cachedRestaurants.map { it.toBusiness() }
@@ -159,6 +160,8 @@ class SwipeViewModel @Inject constructor(
                         }
                         return@withContext
                     }
+
+                    Log.d("JP:", "no cache call api")
 
                     ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
                         response?.businesses?.let { businesses ->
