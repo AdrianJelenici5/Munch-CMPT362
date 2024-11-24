@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.munch_cmpt362.BuildConfig
 import com.example.munch_cmpt362.YelpResponse
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -17,10 +18,22 @@ object ApiHelper {
         longitude: Double,
         onResult: (YelpResponse?) -> Unit
     ) {
+        // Configure OkHttpClient with a logging interceptor
+        val loggingInterceptor = HttpLoggingInterceptor { message ->
+            Log.d("JP", message)
+        }.apply {
+            level = HttpLoggingInterceptor.Level.BODY // Logs request and response body
+        }
+
+        val client = OkHttpClient.Builder()
+//            .addInterceptor(loggingInterceptor) // Add the interceptor
+            .build()
+
+        // Set up Retrofit with the logging-enabled client
         val retrofit = Retrofit.Builder()
             .baseUrl("https://api.yelp.com/")
             .addConverterFactory(GsonConverterFactory.create())
-            .client(OkHttpClient.Builder().build())
+            .client(client)
             .build()
 
         val service = retrofit.create(YelpService::class.java)
@@ -29,7 +42,7 @@ object ApiHelper {
         call.enqueue(object : Callback<YelpResponse> {
             override fun onResponse(call: Call<YelpResponse>, response: Response<YelpResponse>) {
                 if (response.isSuccessful) {
-                    Log.e("Yelp Search Api", "Body: ${response.body()}")
+                    Log.d("Yelp Search Api", "Body: ${response.body()}")
                     onResult(response.body())
                 } else {
                     Log.e("Yelp Nearby Api", "Error: ${response.code()}")

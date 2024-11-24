@@ -2,6 +2,7 @@ package com.example.munch_cmpt362.ui.main
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -12,10 +13,12 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.ui.discover.DiscoverFragment
 import com.example.munch_cmpt362.ui.group.GroupFragment
 import com.example.munch_cmpt362.ui.swipe.SwipeFragment
 import com.example.munch_cmpt362.ui.main.adapter.MyFragmentStateAdapter
 import com.example.munch_cmpt362.ui.profile.ProfileFragment
+import com.example.munch_cmpt362.ui.reviews.ReviewsFragment
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,12 +28,14 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
     private lateinit var swipeFragment: SwipeFragment
     private lateinit var profileFragment: ProfileFragment
     private lateinit var groupFragment: GroupFragment
+    private lateinit var discoverFragment: DiscoverFragment
+    private lateinit var reviewsFragment: ReviewsFragment
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var myMyFragmentStateAdapter: MyFragmentStateAdapter
     private lateinit var locationManager: LocationManager
     private val PERMISSION_REQUEST_CODE = 0
-    private val tabTitles = arrayOf("Swipe", "Profile", "Groups")
+    private val tabTitles = arrayOf("Swipe", "Discover", "Reviews", "Groups", "Profile")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -42,13 +47,28 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
         profileFragment = ProfileFragment()
         swipeFragment = SwipeFragment()
         groupFragment = GroupFragment()
-        val fragments = arrayListOf<Fragment>(swipeFragment, profileFragment, groupFragment)
+        discoverFragment = DiscoverFragment()
+        reviewsFragment = ReviewsFragment()
+        val fragments = arrayListOf<Fragment>(swipeFragment, discoverFragment, reviewsFragment, groupFragment, profileFragment)
 
         myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter
 
+        val selectedColor = ContextCompat.getColorStateList(requireContext(), R.color.tab_icon_color_selector)
+
+        tabLayout.tabTextColors = selectedColor
+        tabLayout.tabIconTint = selectedColor
+
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = tabTitles[position]
+            tab.icon = when (position) {
+                0 -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_action_name)
+                1 -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_discover)
+                2 -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_review)
+                3 -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_group)
+                4 -> ContextCompat.getDrawable(requireContext(), R.drawable.ic_profile)
+                else -> null
+            }
         }.attach()
 
         checkPermission()
@@ -88,6 +108,8 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
 
     override fun onLocationChanged(location: Location) {
         swipeFragment.updateLocation(location.latitude, location.longitude)
+        reviewsFragment.updateLocation(location.latitude, location.longitude)
+        discoverFragment.updateLocation(location.latitude, location.longitude)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {

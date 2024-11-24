@@ -32,4 +32,18 @@ class RestaurantRepository(private val restaurantDao: RestaurantDao) {
         }
     }
 
+    suspend fun getScoreById(restaurantId: String) : Int {
+        return restaurantDao.getScoreById(restaurantId)
+    }
+
+    fun updateScore(restaurantId: String, newScore: Int) {
+        CoroutineScope(IO).launch {
+            restaurantDao.updateUserScore(restaurantId, newScore)
+        }
+    }
+
+    suspend fun getTop3Restaurants() : List<String> {
+        return restaurantDao.getTop3Restaurants()
+    }
+
 }
