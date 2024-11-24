@@ -10,11 +10,14 @@ plugins {
     alias(libs.plugins.navigation.safeargs)
     kotlin("kapt")
 
+    // For google api:
+    // id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+
 }
 
 android {
     namespace = "com.example.munch_cmpt362"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.munch_cmpt362"
@@ -107,5 +110,8 @@ dependencies {
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation ("com.github.yuyakaido:CardStackView:v2.3.4")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // For google api:
+    implementation ("com.google.android.gms:play-services-maps:19.0.0")
 
 }
