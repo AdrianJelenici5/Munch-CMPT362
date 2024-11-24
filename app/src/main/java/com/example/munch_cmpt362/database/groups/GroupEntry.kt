@@ -3,7 +3,7 @@ package munch_cmpt362.database.groups
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import munch_cmpt362.database.restaurants.RestaurantEntry
+import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
 
 // '@Entity" annotation marks this class as a Room entity, meaning it represents a table in the database.
 @Entity(

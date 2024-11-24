@@ -2,9 +2,11 @@ package com.example.munch_cmpt362.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.munch_cmpt362.data.local.cache.ProfileCacheManager
 import com.example.munch_cmpt362.data.local.dao.RestaurantDao
 import com.example.munch_cmpt362.data.local.database.MunchDatabase
 import com.example.munch_cmpt362.data.local.cache.RestaurantCacheManager
+import com.example.munch_cmpt362.data.local.dao.ProfileDao
 import com.example.munch_cmpt362.data.local.database.DatabaseMigrations
 import dagger.Module
 import dagger.Provides
@@ -29,7 +31,12 @@ object DatabaseModule {
             MunchDatabase::class.java,
             "munch_database"
         )
-            .addMigrations(DatabaseMigrations.MIGRATION_1_2)
+
+            .addMigrations(
+                DatabaseMigrations.MIGRATION_1_2,
+                DatabaseMigrations.MIGRATION_2_3
+            )
+
             .build()
     }
 
@@ -38,6 +45,24 @@ object DatabaseModule {
     fun provideRestaurantDao(database: MunchDatabase): RestaurantDao {
         return database.restaurantDao
     }
+
+
+    @Provides
+    @Singleton
+    fun provideProfileDao(database: MunchDatabase): ProfileDao {
+        return database.profileDao
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideProfileCacheManager(
+        profileDao: ProfileDao,
+        coroutineScope: CoroutineScope
+    ): ProfileCacheManager {
+        return ProfileCacheManager(profileDao, coroutineScope)
+    }
+
 
     @Provides
     @Singleton
@@ -61,4 +86,6 @@ object DatabaseModule {
     ): RestaurantRepository {
         return RestaurantRepository(restaurantDao)
     }
+
+
 }
