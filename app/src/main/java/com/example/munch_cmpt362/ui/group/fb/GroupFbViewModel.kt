@@ -9,4 +9,7 @@ class GroupFbViewModel: ViewModel() {
     val groupFb = MutableLiveData<GroupFb>()
     val clickedGroup = MutableLiveData<GroupFb>()
     val addedUser = MutableLiveData<String>()
+    val voteRestaurantName = MutableLiveData<String>()
+    val votedYes = MutableLiveData<Boolean>()
+    val votedNo = MutableLiveData<Boolean>()
 }
