@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.ui.swipe.RestaurantAdapter
 import com.example.munch_cmpt362.ui.swipe.SwipeViewModel
 import java.util.Locale
 import kotlin.math.*

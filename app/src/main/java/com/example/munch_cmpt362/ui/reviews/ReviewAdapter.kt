@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.ui.swipe.RestaurantAdapter.RestaurantViewHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
