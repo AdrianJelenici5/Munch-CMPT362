@@ -1,5 +1,7 @@
 package munch_cmpt362.database.restaurants
 
+import com.example.munch_cmpt362.data.local.dao.RestaurantDao
+import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.Flow
