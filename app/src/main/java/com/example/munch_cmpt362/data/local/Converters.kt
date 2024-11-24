@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.database.restaurants
+package com.example.munch_cmpt362.data.local
 
 import androidx.room.TypeConverter
 import com.example.munch_cmpt362.BusinessHours
@@ -7,7 +7,6 @@ import com.example.munch_cmpt362.Location
 import com.example.munch_cmpt362.OpenHours
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.util.*
 
 class Converters {
 
@@ -62,4 +61,16 @@ class Converters {
             gson.fromJson(it, listType)
         }
     }
+
+    @TypeConverter
+    fun fromString(value: String): Map<String, Any> {
+        val mapType = object : TypeToken<Map<String, Any>>() {}.type
+        return gson.fromJson(value, mapType)
+    }
+
+    @TypeConverter
+    fun fromMap(map: Map<String, Any>): String {
+        return gson.toJson(map)
+    }
+
 }

@@ -5,17 +5,25 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.munch_cmpt362.data.local.dao.ProfileDao
 import com.example.munch_cmpt362.data.local.dao.RestaurantDao
 import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
-import com.example.munch_cmpt362.database.restaurants.Converters
+import com.example.munch_cmpt362.data.local.entity.UserProfileEntity
+import com.example.munch_cmpt362.data.local.Converters
+import com.example.munch_cmpt362.data.local.entity.PendingProfileUpdate
 import munch_cmpt362.database.groups.*
 import munch_cmpt362.database.groupxuser.*
 import munch_cmpt362.database.users.*
 
 // Using @Database annotation to mark this class as a Room DB
 // This db will be made up of four tables:
-@Database(entities = [RestaurantEntry::class, UserEntry::class, GroupEntry::class,
-                     GroupUserCrossRef::class], version = 2)
+@Database(entities = arrayOf(
+    RestaurantEntry::class,
+    UserProfileEntity::class,
+    PendingProfileUpdate::class,
+    UserEntry::class, GroupEntry::class,
+    GroupUserCrossRef::class
+),version = 3)
 @TypeConverters(Converters::class)
 // Telling the db to use a specific type of conversion method:
 abstract class MunchDatabase : RoomDatabase() {
@@ -24,6 +32,7 @@ abstract class MunchDatabase : RoomDatabase() {
     abstract val restaurantDao: RestaurantDao
     abstract val userDao: UserDao
     abstract val groupDao: GroupDao
+    abstract val profileDao: ProfileDao
     // abstract val groupCrossUserDao : GroupCrossUserDao
     //abstract val groupUserCrossRefDao: GroupUserCrossRefDao
 
