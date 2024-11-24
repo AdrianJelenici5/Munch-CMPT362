@@ -10,11 +10,14 @@ plugins {
     alias(libs.plugins.navigation.safeargs)
     kotlin("kapt")
 
+    // For google api:
+    // id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+
 }
 
 android {
     namespace = "com.example.munch_cmpt362"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.munch_cmpt362"
@@ -109,5 +112,8 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
 
+
+    // For google api:
+    implementation ("com.google.android.gms:play-services-maps:19.0.0")
 
 }
