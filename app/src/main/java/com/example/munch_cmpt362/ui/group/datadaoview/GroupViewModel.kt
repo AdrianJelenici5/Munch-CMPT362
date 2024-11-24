@@ -1,13 +1,19 @@
 package com.example.munch_cmpt362.ui.group.datadaoview
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
+import com.example.munch_cmpt362.ui.group.GroupListAdapter
+import com.example.munch_cmpt362.ui.group.GroupMemberListAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 
 class GroupViewModel(private val groupRepository: GroupRepository): ViewModel() {
     val allGroupsLiveData: LiveData<List<Group>> = groupRepository.allUserGroups.asLiveData()
-    var currentGroupAdding: Group = Group()
+    val clickedGroup = MutableLiveData<Group>()
 
     fun insertGroup(group: Group){
         groupRepository.insertGroup(group)

@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.munch_cmpt362.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -50,5 +51,9 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         authRepository.logout()
+    }
+
+    fun returnID(): FirebaseUser? {
+        return authRepository.currentUser
     }
 }
