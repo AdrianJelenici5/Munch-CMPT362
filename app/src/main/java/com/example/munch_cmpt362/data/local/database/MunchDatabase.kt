@@ -1,20 +1,21 @@
-package munch_cmpt362.database
+package com.example.munch_cmpt362.data.local.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.munch_cmpt362.data.local.dao.RestaurantDao
+import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
 import com.example.munch_cmpt362.database.restaurants.Converters
 import munch_cmpt362.database.groups.*
 import munch_cmpt362.database.groupxuser.*
-import munch_cmpt362.database.restaurants.*
 import munch_cmpt362.database.users.*
 
 // Using @Database annotation to mark this class as a Room DB
 // This db will be made up of four tables:
 @Database(entities = [RestaurantEntry::class, UserEntry::class, GroupEntry::class,
-                     GroupUserCrossRef::class], version = 1)
+                     GroupUserCrossRef::class], version = 2)
 @TypeConverters(Converters::class)
 // Telling the db to use a specific type of conversion method:
 abstract class MunchDatabase : RoomDatabase() {
@@ -35,17 +36,17 @@ abstract class MunchDatabase : RoomDatabase() {
 
         // Function that initializes the database on the first access
         // Also returns existing instance on subsequent calls, ensuring only one instance of the db is ever used.
-        fun getInstance(context: Context) : MunchDatabase{
-            synchronized(this){
-                var instance = INSTANCE
-                if(instance == null){
-                    instance = Room.databaseBuilder(
-                        context.applicationContext,
-                        MunchDatabase::class.java,
-                        "munch_database").build()
-                    INSTANCE = instance
-                }
-                return instance
+        fun getInstance(context: Context): MunchDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    MunchDatabase::class.java,
+                    "munch_database"
+                )
+                    .addMigrations(DatabaseMigrations.MIGRATION_1_2) // Add migration
+                    .build()
+                INSTANCE = instance
+                instance
             }
         }
     }
