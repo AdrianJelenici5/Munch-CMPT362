@@ -1,58 +1,76 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
 
     <TextView
         android:id="@+id/Members_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:textAlignment="center"
         android:text="Members"
-        android:textSize="18sp"
-        />
+        android:textAlignment="center"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#6b64b8"
+        android:padding="16dp"/>
 
-    <ListView
-        android:id="@+id/Members_listview"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="match_parent"
         android:layout_below="@id/Members_title"
-        />
+        android:layout_alignParentBottom="true"
+        android:fillViewport="true"
+        android:clipToPadding="false">
 
-    <Button
-        android:id="@+id/Add_members_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:layout_below="@id/Members_listview"
-        android:text="Add Members" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
 
-    <TextView
-        android:id="@+id/Voting_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:layout_below="@id/Add_members_button"
-        android:text="Voting"
-        android:textSize="18sp"
-        />
+                <ListView
+                    android:id="@+id/Members_listview"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:layout_below="@id/Members_title"/>
 
-    <ListView
-        android:id="@+id/Voting_listview"
-        android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:layout_below="@id/Voting_title"
-        />
+            <Button
+                android:id="@+id/Add_members_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_below="@id/Members_listview"
+                android:text="Add Members" />
 
-    <TextView
-        android:id="@+id/Most_voted"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:layout_below="@id/Voting_listview"
-        android:text="Most Voted: "
-        android:textSize="18sp"
-        />
+                    <TextView
+                        android:id="@+id/Voting_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/Add_members_button"
+                        android:text="Voting"
+                        android:textAlignment="center"
+                        android:textSize="20sp"
+                        android:padding="8dp"/>
 
+                 <ListView
+                android:id="@+id/Voting_listview"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_below="@id/Voting_title"
+                />
+
+                    <TextView
+                        android:id="@+id/Most_voted"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/Voting_listview"
+                        android:layout_marginTop="16dp"
+                        android:text="Most Voted: "
+                        android:textAlignment="center"
+                        android:textSize="18sp"
+                        android:padding="16dp"/>
+
+        </RelativeLayout>
+    </ScrollView>
 </RelativeLayout>

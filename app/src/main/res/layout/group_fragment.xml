@@ -1,17 +1,22 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/group_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Group"
+        android:text="Groups"
         android:textAlignment="center"
-        android:textSize="20sp"
+        android:textSize="28sp"
         android:textStyle="bold"
-        />
+        android:textColor="#6b64b8"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"/>
+
 
     <TextView
         android:id="@+id/group_list_title"
@@ -22,20 +27,44 @@
         android:layout_below="@id/group_title"
         />
 
-    <ListView
-        android:id="@+id/group_list"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="match_parent"
         android:layout_below="@id/group_list_title"
-        />
+        android:layout_above="@id/button_container"
+        android:fillViewport="true">
 
-    <Button
-        android:id="@+id/add_group"
-        android:layout_width="wrap_content"
+        <!-- ListView within ScrollView -->
+        <ListView
+            android:id="@+id/group_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="8dp"
+            android:padding="16dp"
+            android:clipToPadding="false"/>
+
+    </ScrollView>
+
+    <RelativeLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add group"
-        android:layout_below="@id/group_list"
-        />
+        android:layout_alignParentBottom="true"
+        android:padding="16dp"
+        android:background="#FFFFFF">
 
+        <!-- Add Group Button -->
+        <Button
+            android:id="@+id/add_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Group"
+            android:textColor="#FFFFFF"
+            android:background="#6b64b8"
+            android:padding="12dp"
+            android:layout_marginBottom="56dp"/>
+
+    </RelativeLayout>
 
 </RelativeLayout>
