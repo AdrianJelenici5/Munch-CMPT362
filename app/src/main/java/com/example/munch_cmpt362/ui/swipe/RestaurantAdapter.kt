@@ -1,5 +1,3 @@
-package com.example.munch_cmpt362.ui.swipe
-
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
@@ -10,25 +8,42 @@ import android.widget.ImageView
 import android.widget.TableLayout
 import android.widget.TableRow
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 
-class RestaurantAdapter(private var restaurants: List<Business>) :
-    RecyclerView.Adapter<RestaurantAdapter.RestaurantViewHolder>() {
+class RestaurantAdapter :
+    ListAdapter<Business, RestaurantAdapter.RestaurantViewHolder>(DIFF_CALLBACK) {
+
+    companion object {
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Business>() {
+            override fun areItemsTheSame(oldItem: Business, newItem: Business): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: Business, newItem: Business): Boolean {
+                return oldItem == newItem
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RestaurantViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_restaurant, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_restaurant, parent, false)
         return RestaurantViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: RestaurantViewHolder, position: Int) {
-        val restaurant = restaurants[position]
+        val restaurant = getItem(position)
         holder.bind(restaurant)
     }
 
-    override fun getItemCount(): Int = restaurants.size
+    fun getItemAtPosition(position: Int): Business {
+        return getItem(position)
+    }
 
     class RestaurantViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.restaurantName)

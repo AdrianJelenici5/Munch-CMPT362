@@ -2,6 +2,10 @@ package munch_cmpt362.database.restaurants
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.munch_cmpt362.Business
+import com.example.munch_cmpt362.BusinessHours
+import com.example.munch_cmpt362.Category
+import com.example.munch_cmpt362.Location
 
 // '@Entity" annotation marks this class as a Room entity, meaning it represents a table in the database.
 @Entity(tableName = "restaurant_table") // specifies the name of the table in the db
@@ -10,15 +14,35 @@ import androidx.room.PrimaryKey
 // One instant of this class (i.e. object) will represent one row in the above table
 data class RestaurantEntry (
     // Setting the id as the primary key
-    @PrimaryKey(autoGenerate = true) val restaurantId: Long = 0L,
-    // Listing all the other fields/attributes:
-    val restaurantName: String,
-    val coordinates: Int, // TODO: change the type?
-    val foodType: Int, // TODO: keep this as int or change to string?
-    val rating: Int,
+    @PrimaryKey val restaurantId: String,
+    val name: String,
+    val rating: Float,
+    val reviewCount: Int,
+    val price: String?,
+    val location: Location,
+    val phone: String,
+    val category: Category,
     val websiteUrl: String,
-    val ReviewCount: Int,
+    val imageUrl: String?,
+    val businessHours: List<BusinessHours>,
+    val userScore: Int = 100
 ) {
+
+    fun toBusiness(): Business {
+        return Business(
+            id = restaurantId,
+            name = name,
+            rating = rating,
+            review_count = reviewCount,
+            price = price,
+            location = location,
+            phone = phone,
+            categories = listOf(category),
+            url = websiteUrl,
+            image_url = imageUrl ?: "",
+            business_hours = businessHours
+        )
+    }
 
     /*
 
