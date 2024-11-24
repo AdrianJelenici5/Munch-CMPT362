@@ -132,8 +132,10 @@ class SwipeViewModel : ViewModel() {
     }
 
     fun processPendingRemovals() {
-        _restaurants.value = _restaurants.value?.filterNot { it.id in pendingRemovalIds }
-        pendingRemovalIds.clear()
+        if(pendingRemovalIds.isNotEmpty()) {
+            _restaurants.value = _restaurants.value?.filterNot { it.id in pendingRemovalIds }
+            pendingRemovalIds.clear()
+        }
     }
 
     private fun loadFakeBusinesses(): YelpResponse {

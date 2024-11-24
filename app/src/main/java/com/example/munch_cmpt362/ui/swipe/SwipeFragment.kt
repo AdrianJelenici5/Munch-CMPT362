@@ -57,7 +57,6 @@ class SwipeFragment : Fragment() {
         initializeUI(view)
         initializeRepository()
         setupCardStackView()
-        observeViewModel()
         return view
     }
 
@@ -70,6 +69,7 @@ class SwipeFragment : Fragment() {
         }
 
         swipeViewModel.fetchRestaurants(isFakeData = false, lat, lng, databaseDao)
+        observeViewModel()
     }
 
     private fun initializeUI(view: View) {
