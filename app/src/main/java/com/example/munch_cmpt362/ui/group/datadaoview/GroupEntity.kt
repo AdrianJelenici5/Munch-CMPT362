@@ -44,8 +44,36 @@ data class Group (
     var restaurantName: String = "",
 
     @ColumnInfo(name = "voting")
-    var voting: Boolean = false
+    var voting: Boolean = false,
+
+    // for cache: New fields for caching support
+    @ColumnInfo(name = "lastFetched")
+    var lastFetched: Long = System.currentTimeMillis(),
+
+    @ColumnInfo(name = "isCached")
+    var isCached: Boolean = true,
+
+    @ColumnInfo(name = "isPendingSync")
+    var isPendingSync: Boolean = false
 )
+
+// New entity for group members cache
+// for cache: New entity for managing group members
+@Entity(
+    tableName = "group_members",
+    primaryKeys = ["group_id", "member_id"]
+)
+data class GroupMember(
+    @ColumnInfo(name = "group_id")
+    val groupId: Long,
+
+    @ColumnInfo(name = "member_id")
+    val memberId: String,
+
+    @ColumnInfo(name = "lastFetched")
+    val lastFetched: Long = System.currentTimeMillis()
+)
+
 
 // Basic counter
 @Entity(tableName = "counter_table")

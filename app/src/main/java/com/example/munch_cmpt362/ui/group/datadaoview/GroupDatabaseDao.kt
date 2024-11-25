@@ -2,7 +2,10 @@ package com.example.munch_cmpt362.ui.group.datadaoview
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -52,5 +55,24 @@ interface GroupDatabaseDao {
     // Delete old counter
     @Query("DELETE FROM counter_table WHERE counter_num = :counter")
     suspend fun deleteCounter(counter: Long)
+
+    // New cache-related methods
+    @Query("SELECT COUNT(*) FROM group_table")
+    suspend fun getCacheSize(): Int
+
+    @Query("DELETE FROM group_table WHERE lastFetched < :timestamp AND isCached = 1")
+    suspend fun clearOldCache(timestamp: Long)
+
+    @Query("UPDATE group_table SET lastFetched = :timestamp WHERE group_ID = :groupId")
+    suspend fun updateLastFetched(groupId: Long, timestamp: Long)
+
+    @Query("SELECT * FROM group_table WHERE isPendingSync = 1")
+    suspend fun getPendingChanges(): List<Group>
+
+    @Query("UPDATE group_table SET isPendingSync = 0 WHERE group_ID = :groupId")
+    suspend fun markAsSynced(groupId: Long)
+
+    @Query("DELETE FROM group_table WHERE isCached = 1")
+    suspend fun clearCache()
 
 }
