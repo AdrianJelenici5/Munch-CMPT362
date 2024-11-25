@@ -20,7 +20,6 @@ import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabase
 import com.example.munch_cmpt362.ui.group.datadaoview.GroupDatabaseDao
 import com.example.munch_cmpt362.ui.group.datadaoview.GroupRepository
 import com.example.munch_cmpt362.ui.group.datadaoview.GroupViewModel
-import com.example.munch_cmpt362.ui.group.datadaoview.GroupViewModelFactory
 import com.example.munch_cmpt362.ui.group.datadaoview.User
 import com.example.munch_cmpt362.ui.group.fb.GroupFbViewModel
 import com.google.firebase.Firebase
