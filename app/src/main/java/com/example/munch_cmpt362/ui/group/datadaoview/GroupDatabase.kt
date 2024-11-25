@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // Have stub users
-@Database(entities = [User::class, Group::class, Counter::class], version = 6)
+@Database(entities = [User::class, Group::class, Counter::class], version = 7)
 abstract class GroupDatabase: RoomDatabase() {
     abstract val groupDatabaseDao: GroupDatabaseDao
 
@@ -18,8 +18,14 @@ abstract class GroupDatabase: RoomDatabase() {
             synchronized(this){
                 var instance = INSTANCE
                 if(instance == null){
-                    instance = Room.databaseBuilder(context.applicationContext,
-                        GroupDatabase::class.java, "GC db").fallbackToDestructiveMigration().build()
+                    instance = Room.databaseBuilder(
+                        context.applicationContext,
+                        GroupDatabase::class.java,
+                        "GC_db"
+                    )
+                        .addMigrations(GroupDatabaseMigrations.MIGRATION_6_7)
+                        .fallbackToDestructiveMigration()
+                        .build()
                     INSTANCE = instance
                 }
                 return instance
