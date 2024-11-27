@@ -11,61 +11,74 @@ import com.example.munch_cmpt362.Category
 import com.example.munch_cmpt362.Location
 import com.example.munch_cmpt362.OpenHours
 import com.example.munch_cmpt362.YelpResponse
+import com.example.munch_cmpt362.data.local.cache.RestaurantCacheManager
 import com.example.munch_cmpt362.data.remote.api.ApiHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import munch_cmpt362.database.MunchDatabase
-import munch_cmpt362.database.restaurants.RestaurantDao
-import munch_cmpt362.database.restaurants.RestaurantEntry
+import com.example.munch_cmpt362.data.local.dao.RestaurantDao
+import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class SwipeViewModel : ViewModel() {
+@HiltViewModel
+class SwipeViewModel @Inject constructor(
+    private val cacheManager: RestaurantCacheManager,
+    private val restaurantDao: RestaurantDao
+) : ViewModel() {
     private val _restaurants = MutableLiveData<List<Business>>()
     val restaurants: LiveData<List<Business>> = _restaurants
 
     private val pendingRemovalIds = mutableListOf<String>()
-
     private var dataFetched = false
-
     private val excludeRestaurantIds = mutableSetOf<String>()
+
+    // Caching
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
 
     fun fetchRestaurants(isFakeData: Boolean = false, latitude: Double, longitude: Double, restaurantDao: RestaurantDao) {
         Log.d("JP:", "dataFetched value ${dataFetched}")
         if (dataFetched) return
-        if(isFakeData) {
+        _isLoading.value = true
+
+        if (isFakeData) {
             _restaurants.value = loadFakeBusinesses().businesses
-        }
-        else {
+            _isLoading.value = false
+            return
+        } else {
             Log.d("JP:", "API called to fetch")
-            ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
-                response?.businesses?.let { businesses ->
-                    dataFetched = true
+            viewModelScope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        Log.d("CacheTest", "Checking cache for restaurants...")
+                        val cacheSize = restaurantDao.getCacheSize()
+                        Log.d("CacheTest", "Current cache size: $cacheSize")
 
-                    // Convert each Business object into a RestaurantEntry and insert into the database
-                    businesses.forEach { business ->
-                        val restaurantEntry = RestaurantEntry(
-                            restaurantId = business.id,
-                            name = business.name,
-                            rating = business.rating,
-                            reviewCount = business.review_count,
-                            price = business.price,
-                            location = business.location,
-                            phone = business.phone,
-                            category = business.categories[0],
-                            websiteUrl = business.url,
-                            imageUrl = business.image_url,
-                            businessHours = business.business_hours
-                        )
-
-                        // Run insertion on a background thread or coroutine
-                        CoroutineScope(Dispatchers.IO).launch {
-                            restaurantDao.insertEntry(restaurantEntry)
+                        val cachedRestaurants = cacheManager.getNextBatchOfRestaurants(10)
+                        if (cachedRestaurants.isNotEmpty()) {
+                            Log.d("CacheTest", "Found ${cachedRestaurants.size} restaurants in cache")
+                            withContext(Dispatchers.Main) {
+                                _restaurants.value = cachedRestaurants.map { it.toBusiness() }
+                                dataFetched = true
+                            }
+                            Log.d("CacheTest", "Starting prefetch for next batch...")
+                            // Prefetch next batch in background
+                            cacheManager.prefetchRestaurants(latitude, longitude)
+                        } else {
+                            Log.d("CacheTest", "Cache empty, fetching from API...")
+                            // If cache is empty, fetch from API
+                            fetchFromApi(latitude, longitude)
                         }
-                        Log.d("JP:", "rest id  ${business.id}")
-                        excludeRestaurantIds.add(business.id)
                     }
-
-                    _restaurants.value = businesses
+                } catch (e: Exception) {
+                    Log.e("SwipeViewModel", "Error fetching restaurants: ${e.message}")
+                    Log.e("CacheTest", "Error fetching restaurants: ${e.message}", e)
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        _isLoading.value = false
+                    }
                 }
             }
 
@@ -78,46 +91,137 @@ class SwipeViewModel : ViewModel() {
         }
     }
 
-    fun fetchRestaurantsWithExcludeList(latitude: Double, longitude: Double, restaurantDao: RestaurantDao, onResult: (Boolean) -> Unit ){
-//        Log.d("JP:", "expand API called to fetch")
-//        Log.d("JP:", "exclude list value ${excludeRestaurantIds}")
+    private suspend fun fetchFromApi(latitude: Double, longitude: Double) {
+        withContext(Dispatchers.IO) {
+            Log.d("CacheTest", "Making API call...")
+            ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+                response?.businesses?.let { businesses ->
+                    Log.d("CacheTest", "Received ${businesses.size} restaurants from API")
+                    viewModelScope.launch {
+                        viewModelScope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    val restaurantEntries = businesses.map { business ->
+                                        RestaurantEntry(
+                                            restaurantId = business.id,
+                                            name = business.name,
+                                            rating = business.rating,
+                                            reviewCount = business.review_count,
+                                            price = business.price,
+                                            location = business.location,
+                                            phone = business.phone,
+                                            category = business.categories[0],
+                                            websiteUrl = business.url,
+                                            imageUrl = business.image_url,
+                                            businessHours = business.business_hours,
+                                            lastFetched = System.currentTimeMillis(),
+                                            isCached = true,
+                                            isPreFetched = false
+                                        )
+                                    }
+                                    Log.d("CacheTest", "Caching ${restaurantEntries.size} restaurants")
+                                    restaurantDao.insertAll(restaurantEntries)
+                                    excludeRestaurantIds.addAll(businesses.map { it.id })
 
-        ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
-            response?.businesses?.let { businesses ->
-                val filteredBusinesses = businesses.filterNot { excludeRestaurantIds.contains(it.id) }
-                if (filteredBusinesses.isNotEmpty()) {
+                                    val newCacheSize = restaurantDao.getCacheSize()
+                                    Log.d("CacheTest", "New cache size after insert: $newCacheSize")
+                                }
 
-                    // Convert each Business object into a RestaurantEntry and insert it into the database
-                    filteredBusinesses.forEach { business ->
-                        val restaurantEntry = RestaurantEntry(
-                            restaurantId = business.id,
-                            name = business.name,
-                            rating = business.rating,
-                            reviewCount = business.review_count,
-                            price = business.price,
-                            location = business.location,
-                            phone = business.phone,
-                            category = business.categories[0],
-                            websiteUrl = business.url,
-                            imageUrl = business.image_url,
-                            businessHours = business.business_hours
-                        )
-
-                        // Insert into the database on a background thread
-                        CoroutineScope(Dispatchers.IO).launch {
-                            restaurantDao.insertEntry(restaurantEntry)
+                                withContext(Dispatchers.Main) {
+                                    dataFetched = true
+                                    _restaurants.value = businesses
+                                }
+                            } catch (e: Exception) {
+                                Log.e("SwipeViewModel", "Error in API fetch: ${e.message}")
+                            }
                         }
                     }
-                    _restaurants.value = filteredBusinesses
-                    onResult(false)
-                } else {
-                    Log.d("JP:", "No new restaurants to fetch, all are excluded.")
-                    onResult(true)
                 }
             }
         }
+    }
 
-        // Collect updated restaurant entries from the database
+
+
+    fun fetchRestaurantsWithExcludeList(latitude: Double, longitude: Double, restaurantDao: RestaurantDao, onResult: (Boolean) -> Unit ) {
+//        Log.d("JP:", "expand API called to fetch")
+//        Log.d("JP:", "exclude list value ${excludeRestaurantIds}")
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    // Try to get unseen restaurants from cache first
+                    val cachedRestaurants = cacheManager.getNextBatchOfRestaurants(10)
+                    Log.d("JP:", "expand cache, ${cachedRestaurants}.")
+                    if (cachedRestaurants.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            _restaurants.value = cachedRestaurants.map { it.toBusiness() }
+                            onResult(false)
+                        }
+                        return@withContext
+                    }
+
+                    Log.d("JP:", "no cache call api")
+
+                    ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+                        response?.businesses?.let { businesses ->
+                            viewModelScope.launch {
+                                try {
+                                    val filteredBusinesses = businesses.filterNot {
+                                        excludeRestaurantIds.contains(it.id)
+                                    }
+
+                                    // Convert each Business object into a RestaurantEntry and insert it into the database
+                                    if (filteredBusinesses.isNotEmpty()) {
+                                        withContext(Dispatchers.IO) {
+                                            val restaurantEntries =
+                                                filteredBusinesses.map { business ->
+                                                    RestaurantEntry(
+                                                        restaurantId = business.id,
+                                                        name = business.name,
+                                                        rating = business.rating,
+                                                        reviewCount = business.review_count,
+                                                        price = business.price,
+                                                        location = business.location,
+                                                        phone = business.phone,
+                                                        category = business.categories[0],
+                                                        websiteUrl = business.url,
+                                                        imageUrl = business.image_url,
+                                                        businessHours = business.business_hours,
+                                                        lastFetched = System.currentTimeMillis(),
+                                                        isCached = true,
+                                                        isPreFetched = true
+                                                    )
+                                                }
+                                            restaurantDao.insertAll(restaurantEntries)
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            _restaurants.value = filteredBusinesses
+                                            onResult(false)
+                                        }
+                                    } else {
+                                        withContext(Dispatchers.Main) {
+                                            Log.d(
+                                                "JP:",
+                                                "No new restaurants to fetch, all are excluded."
+                                            )
+                                            onResult(true)
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(
+                                        "SwipeViewModel",
+                                        "Error in exclude list fetch: ${e.message}"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            // Collect updated restaurant entries from the database
 //        viewModelScope.launch {
 //            restaurantDao.getAllEntries().collect { restaurantEntries ->
 //                // Filter out excluded restaurants before posting
@@ -125,10 +229,23 @@ class SwipeViewModel : ViewModel() {
 //                _restaurants.value = validRestaurants.map { it.toBusiness() }
 //            }
 //        }
+            catch (e: Exception) {
+                Log.e("SwipeViewModel", "Error in fetchRestaurantsWithExcludeList: ${e.message}")
+            } finally {
+                withContext(Dispatchers.Main) {
+                    _isLoading.value = false
+                }
+            }
+        }
     }
+
+
 
     fun queueRestaurantForRemoval(restaurantId: String) {
         pendingRemovalIds.add(restaurantId)
+
+        // Mark restaurant as seen in cache
+        cacheManager.markAsSeen(restaurantId)
     }
 
     fun processPendingRemovals() {
@@ -138,7 +255,7 @@ class SwipeViewModel : ViewModel() {
         }
     }
 
-    private fun loadFakeBusinesses(): YelpResponse {
+    fun loadFakeBusinesses(): YelpResponse {
         val fakeBusinesses = listOf(
             Business(
                 id = "1",
@@ -214,5 +331,10 @@ class SwipeViewModel : ViewModel() {
 
         val fakeResponse = YelpResponse(businesses = fakeBusinesses)
         return fakeResponse
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up any resources if needed
     }
 }

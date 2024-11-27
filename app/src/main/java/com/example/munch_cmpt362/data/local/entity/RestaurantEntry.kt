@@ -1,4 +1,4 @@
-package munch_cmpt362.database.restaurants
+package com.example.munch_cmpt362.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -25,7 +25,11 @@ data class RestaurantEntry (
     val websiteUrl: String,
     val imageUrl: String?,
     val businessHours: List<BusinessHours>,
-    val userScore: Int = 100
+    val userScore: Int = 100,
+    // New fields for caching
+    val lastFetched: Long = System.currentTimeMillis(),
+    val isCached: Boolean = true,
+    val isPreFetched: Boolean = false
 ) {
 
     fun toBusiness(): Business {

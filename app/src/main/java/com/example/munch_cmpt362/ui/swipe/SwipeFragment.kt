@@ -15,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
@@ -23,8 +22,9 @@ import com.google.firebase.ktx.Firebase
 import com.yuyakaido.android.cardstackview.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import munch_cmpt362.database.MunchDatabase
-import munch_cmpt362.database.restaurants.RestaurantDao
+import com.example.munch_cmpt362.data.local.database.MunchDatabase
+import com.example.munch_cmpt362.data.local.dao.RestaurantDao
+import dagger.hilt.android.AndroidEntryPoint
 import munch_cmpt362.database.restaurants.RestaurantRepository
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -32,6 +32,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+@AndroidEntryPoint
 class SwipeFragment : Fragment() {
     private lateinit var cardStackView: CardStackView
     private lateinit var title: TextView

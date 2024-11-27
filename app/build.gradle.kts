@@ -77,6 +77,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.firebase.storage.ktx)
     kapt(libs.hilt.compiler)
 
     // Play-Service

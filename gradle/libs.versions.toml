@@ -14,7 +14,6 @@ hilt = "2.48"
 play-services = "18.1.0"
 nav = "2.7.7"
 roomKtx = "2.6.1"
-firebaseDatabaseKtx = "21.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,7 +39,8 @@ androidx-navigation-fragment = { group = "androidx.navigation", name = "navigati
 androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "nav" }
 play-services-basement = { group = "com.google.android.gms", name = "play-services-basement", version.ref = "play-services" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
-firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
+firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx"}
+firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx"}
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

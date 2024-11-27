@@ -11,21 +11,31 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
+    <!-- Profile Image Section -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="32dp">
+
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivProfile"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="32dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_profile_placeholder"
             app:shapeAppearanceOverlay="@style/CircleImageView"/>
 
-        <TextView
-            android:id="@+id/tvEmail"
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabChangePhoto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textSize="16sp"/>
+            android:layout_gravity="bottom|end"
+            android:layout_margin="0dp"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_discover"
+            android:contentDescription="Change profile photo"/>
+
+    </FrameLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -55,6 +65,32 @@
                 android:inputType="textMultiLine"
                 android:minLines="3"/>
         </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Search Radius Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textAlignment="center"
+            android:text="Search Radius"
+            android:textStyle="bold"/>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/radiusSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:valueFrom="1"
+            android:valueTo="50"
+            android:stepSize="1"
+            app:labelBehavior="withinBounds"/>
+
+        <TextView
+            android:id="@+id/tvRadiusValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="25 km"/>
 
         <Button
             android:id="@+id/btnSave"

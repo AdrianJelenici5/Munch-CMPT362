@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
