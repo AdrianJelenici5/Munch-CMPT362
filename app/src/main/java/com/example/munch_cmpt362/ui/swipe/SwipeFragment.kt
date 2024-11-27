@@ -97,17 +97,14 @@ class SwipeFragment : Fragment() {
         expandSearchButton.visibility = View.GONE
         noMoreRestaurantsText.visibility = View.GONE
 
-        Log.d("JP:", "old coords: ${lat}, ${lng}")
         val randomCoord = generateRandomCoordinate(lat, lng, 10000.0)
 
         // Update lat/lng with the new randomized location
         val newLat = randomCoord.first
         val newLng = randomCoord.second
 
-        Log.d("JP:", "new coords: ${newLat}, ${newLng}")
 
         swipeViewModel.fetchRestaurantsWithExcludeList(newLat, newLng, databaseDao) { flag ->
-            Log.d("JP:", "flag value: $flag")
             if (flag) {
                 noMoreRestaurantsText.visibility = View.VISIBLE
                 val layoutParams = noMoreRestaurantsText.layoutParams as RelativeLayout.LayoutParams
@@ -118,7 +115,7 @@ class SwipeFragment : Fragment() {
         }
     }
 
-    private fun generateRandomCoordinate(lat: Double, lng: Double, radiusMeters: Double): Pair<Double, Double> {
+    fun generateRandomCoordinate(lat: Double, lng: Double, radiusMeters: Double): Pair<Double, Double> {
         val earthRadius = 6371000.0 // Earth radius in meters
 
         // Randomize distance and angle

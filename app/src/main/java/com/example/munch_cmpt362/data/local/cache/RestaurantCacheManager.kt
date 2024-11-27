@@ -34,7 +34,9 @@ class RestaurantCacheManager @Inject constructor(
 
     suspend fun getNextBatchOfRestaurants(limit: Int): List<RestaurantEntry> {
         return withContext(Dispatchers.IO) {
+            val oneDayAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000) // 24 hours in milliseconds
             restaurantDao.getUnseenRestaurants(seenRestaurantIds.toList(), limit)
+                .filter { it.lastFetched < oneDayAgo } // Only include restaurants last fetched more than a day ago
         }
     }
 
