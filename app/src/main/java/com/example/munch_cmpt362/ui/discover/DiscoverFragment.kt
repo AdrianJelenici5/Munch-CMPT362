@@ -48,14 +48,13 @@ import kotlin.math.sqrt
 
 // TODO:
 //  1) Show all locations in list on map as well
-//  2) If you click on element in list, it highlights that element on map
-//      -> Also zooms in on element in map and doesnt show any other element in list
+//  2) If you click on element in list:
+//      -> Also zooms in on element in map, colors it diff color, and doesnt show any other element in list
 //      -> If you're in expanded mode when does this, kicks you back to shruken mode
-//  3) If you click on element in map, it brings that restaurant to top of list
-//      -> Also zooms in on element in map and doesnt show any other element in list
-//  4) Add header to list: I.e. Showing all Restaurants: , or Selected: (show card view from swipe screen), or "sdiofs": (<- what was searched)
-//  5) Also, center map between search and list, not in the middle of screen itself
-//  6) Also, clicking on restaurant doesnt open link but just shows card view
+//  3) If you click on element in map:
+//      -> Also zooms in on element in map, colors it diff color, and doesnt show any other element in list
+//  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
+//  6) Make search work
 //  7) Also when in exapnded form, move shrink button to underneath list
 
 
@@ -96,7 +95,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
             if (expanded == false) {
                 val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = dpToPx(95) // Set the top margin to 100
+                params.topMargin = dpToPx(140) // Set the top margin to 100
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
                 expandTextView.text = "shrink"
@@ -178,7 +177,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         println("debug: onLocationChanged() ${location.latitude} ${location.longitude}")
         val latLng = LatLng(location.latitude, location.longitude)
         if (!mapCentered) {
-            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17f)
+            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)
             mMap.animateCamera(cameraUpdate)
             markerOptions.position(latLng)
             mMap.addMarker(markerOptions)
@@ -188,15 +187,15 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     }
 
     override fun onMapClick(latLng: LatLng) {
-        for (polyline in polylines) polyline.remove()
-        polylineOptions.points.clear()
+//        for (polyline in polylines) polyline.remove()
+//        polylineOptions.points.clear()
     }
 
     override fun onMapLongClick(latLng: LatLng) {
-        markerOptions.position(latLng)
-        mMap.addMarker(markerOptions)
-        polylineOptions.add(latLng)
-        polylines.add(mMap.addPolyline(polylineOptions))
+//        markerOptions.position(latLng)
+//        mMap.addMarker(markerOptions)
+//        polylineOptions.add(latLng)
+//        polylines.add(mMap.addPolyline(polylineOptions))
     }
 
     override fun onDestroyView() {
