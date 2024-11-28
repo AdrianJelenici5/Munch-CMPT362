@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.munch_cmpt362.data.local.database.MunchDatabase
 import com.example.munch_cmpt362.data.local.dao.RestaurantDao
+import com.example.munch_cmpt362.ui.reviews.ReviewViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import munch_cmpt362.database.restaurants.RestaurantRepository
 import kotlin.math.asin
@@ -43,6 +45,7 @@ class SwipeFragment : Fragment() {
     private lateinit var expandSearchButton: Button
 
     private val swipeViewModel: SwipeViewModel by viewModels()
+    private val reviewViewModel: ReviewViewModel by activityViewModels()
 
     private lateinit var database: MunchDatabase
     private lateinit var databaseDao: RestaurantDao
@@ -196,7 +199,9 @@ class SwipeFragment : Fragment() {
         val swipedRestaurant = restaurantAdapter.getItemAtPosition(position)
 
         when (direction) {
-            Direction.Right -> updateRestaurantScore(swipedRestaurant.id, 20)
+            Direction.Right -> {
+                reviewViewModel.addRestaurantId(swipedRestaurant.id)
+                updateRestaurantScore(swipedRestaurant.id, 20)}
             Direction.Left -> updateRestaurantScore(swipedRestaurant.id, -20)
             else -> {}
         }

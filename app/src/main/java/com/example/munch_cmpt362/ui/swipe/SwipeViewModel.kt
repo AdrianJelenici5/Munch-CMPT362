@@ -61,6 +61,10 @@ class SwipeViewModel @Inject constructor(
                             Log.d("CacheTest", "Found ${cachedRestaurants.size} restaurants in cache")
                             withContext(Dispatchers.Main) {
                                 _restaurants.value = cachedRestaurants.map { it.toBusiness() }
+                                //after fetching old data, we need to all api update it
+                                cachedRestaurants.map {
+                                    restaurantDao.updateLastFetched(it.restaurantId, System.currentTimeMillis())
+                                }
                                 dataFetched = true
                             }
                             Log.d("CacheTest", "Starting prefetch for next batch...")
@@ -106,7 +110,10 @@ class SwipeViewModel @Inject constructor(
 
                                     val restaurantEntries = businesses.mapNotNull  { business ->
                                         val existingRestaurant = restaurantDao.getRestaurantById(business.id)
-
+                                        if (existingRestaurant != null) {
+                                            Log.d("CacheTest", "${existingRestaurant.lastFetched} < ${oneDayAgo} is ${existingRestaurant.lastFetched < oneDayAgo}")
+                                        }
+                                        Log.d("CacheTest", "Making API call...")
                                         if (existingRestaurant == null || existingRestaurant.lastFetched < oneDayAgo) {
                                             RestaurantEntry(
                                                 restaurantId = business.id,

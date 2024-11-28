@@ -39,6 +39,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -58,7 +59,7 @@ import kotlin.math.sqrt
 //  6) Also, clicking on restaurant doesnt open link but just shows card view
 //  7) Also when in exapnded form, move shrink button to underneath list
 
-
+@AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener {
 
@@ -70,7 +71,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     private lateinit var polylineOptions: PolylineOptions
     private lateinit var polylines: ArrayList<Polyline>
 
-    private val reviewViewModel: ReviewViewModel by viewModels()
+    private val discoverViewModel: DiscoverViewModel by viewModels()
     private lateinit var recyclerView: RecyclerView
     private lateinit var reviewAdapter : ReviewAdapter
     private lateinit var expandTextView : TextView
@@ -127,7 +128,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = /*sortRestaurants(*/restaurants//)
                 reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
@@ -138,7 +139,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 Log.d("XD:", "No restaurants available.")
             }
         }
-        reviewViewModel.fetchRestaurants(lat, lng)
+        discoverViewModel.fetchRestaurants(lat, lng)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
