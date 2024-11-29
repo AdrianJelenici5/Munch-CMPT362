@@ -39,9 +39,6 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // TODO:
-//  2) If you click on element in list:
-//      -> Also zooms in on element in map, colors it diff color, and doesnt show any other element in list
-//      -> If you're in expanded mode when does this, kicks you back to shruken mode
 //  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
 //  6) Make search work
 //  7) Also when in exapnded form, move shrink button to underneath list
@@ -50,7 +47,7 @@ import kotlin.math.sqrt
 
 @AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
-    GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener {
+    GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var locationManager: LocationManager
@@ -197,14 +194,13 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         mMap.setOnMarkerClickListener { marker ->
             onMarkerClick(marker)
-            return@setOnMarkerClickListener false
+            //return@setOnMarkerClickListener false
         }
 
         initLocationManager()
     }
 
-    private fun onMarkerClick(marker: Marker) {
-        Log.d("MarkerClick", "AJ: Marker clicked: ${marker.title}")
+    override fun onMarkerClick(marker: Marker): Boolean {
         if (marker.title != null) {
             Log.d("MarkerClick", "AJ: (inside onMapReady) Marker clicked: ${marker.title}")
             discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
@@ -221,8 +217,21 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
             }
             labelTextView.text = "    All restaurants in your area:"
         }
-    }
 
+        val latLng = marker.position
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)  // Zoom level of 15
+        mMap.animateCamera(cameraUpdate)
+        marker.showInfoWindow()
+
+        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
+        params.topMargin = dpToPx(475) // Set the top margin to 100
+        recyclerView.layoutParams = params
+        recyclerView.requestLayout()
+        expandTextView.text = "expand"
+        expanded = false
+
+        return true
+    }
 
     fun updateRecyclerViewWithRestaurant(restaurant: Business) {
         // Create a list with only the matching restaurant
