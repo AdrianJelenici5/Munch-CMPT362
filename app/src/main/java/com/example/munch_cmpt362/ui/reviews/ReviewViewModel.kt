@@ -9,7 +9,9 @@ import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.data.local.dao.RestaurantDao
 import com.example.munch_cmpt362.data.remote.api.ApiHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -29,16 +31,24 @@ class ReviewViewModel @Inject constructor(
 
         viewModelScope.launch {
             val fetchedRestaurants = withContext(Dispatchers.IO) {
-                restaurantIds.mapNotNull { id ->
-                    restaurantDao.getRestaurantById(id)
-                }
+                restaurantDao.getSwipedRestaurant()
             }
             val businessList = fetchedRestaurants.map { it.toBusiness() }
             _restaurants.value = businessList
+//            val fetchedRestaurants = withContext(Dispatchers.IO) {
+//                restaurantIds.mapNotNull { id ->
+//                    restaurantDao.getRestaurantById(id)
+//                }
+//            }
+//            val businessList = fetchedRestaurants.map { it.toBusiness() }
+//            _restaurants.value = businessList
         }
     }
 
     fun addRestaurantId(restaurantId: String) {
         restaurantIds.add(restaurantId)
+        CoroutineScope(IO).launch {
+            restaurantDao.updateIsSwiped(restaurantId, true)
+        }
     }
 }

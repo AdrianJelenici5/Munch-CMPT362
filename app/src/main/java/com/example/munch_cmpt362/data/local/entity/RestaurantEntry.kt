@@ -29,7 +29,9 @@ data class RestaurantEntry (
     // New fields for caching
     val lastFetched: Long = System.currentTimeMillis(),
     val isCached: Boolean = true,
-    val isPreFetched: Boolean = false
+    val isPreFetched: Boolean = false,
+    // New fields for review
+    val isSwiped: Boolean = false
 ) {
 
     fun toBusiness(): Business {
