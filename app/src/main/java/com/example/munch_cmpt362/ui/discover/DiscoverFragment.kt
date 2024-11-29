@@ -128,6 +128,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
+                // TODO: This is probs where we put map markers
+                //  or maybe we copy the restaurants.observe into onMapReady?
                 val sortedRestaurants = /*sortRestaurants(*/restaurants//)
                 reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
                 recyclerView.adapter = reviewAdapter
