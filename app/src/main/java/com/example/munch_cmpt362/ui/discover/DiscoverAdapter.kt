@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.ui.reviews
+package com.example.munch_cmpt362.ui.discover
 
 import android.content.Context
 import android.content.Intent
@@ -26,21 +26,21 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class ReviewAdapter(private var restaurants: List<Business>, private val currentLat: Double, private val currentLng: Double
-) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
+class DiscoverAdapter(private var restaurants: List<Business>, private val currentLat: Double, private val currentLng: Double
+) : RecyclerView.Adapter<DiscoverAdapter.DiscoverViewHolder>() {
 
     fun updateData(newRestaurants: List<Business>) {
         restaurants = newRestaurants
         notifyDataSetChanged()  // Notify the adapter that the data has changed
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DiscoverViewHolder {
         // Log.d("XD:", "XD: onCreateViewHolder")
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_restaurant_review, parent, false)
-        return ReviewViewHolder(view, currentLat, currentLng)
+        return DiscoverViewHolder(view, currentLat, currentLng)
     }
 
-    override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: DiscoverViewHolder, position: Int) {
         // Log.d("XD:", "XD: onBindViewHolder")
         val restaurant = restaurants[position]
         holder.bind(restaurant, holder.itemView.context)
@@ -48,7 +48,7 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
 
     override fun getItemCount(): Int = restaurants.size
 
-    class ReviewViewHolder(itemView: View, private val currentLat: Double, private val currentLng: Double) : RecyclerView.ViewHolder(itemView) {
+    class DiscoverViewHolder(itemView: View, private val currentLat: Double, private val currentLng: Double) : RecyclerView.ViewHolder(itemView) {
 
         private val nameTextView: TextView = itemView.findViewById(R.id.tvName)
         private val restaurantInfoTextView: TextView = itemView.findViewById(R.id.restaurantInfo)
@@ -155,5 +155,3 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
 
 
 }
-
-

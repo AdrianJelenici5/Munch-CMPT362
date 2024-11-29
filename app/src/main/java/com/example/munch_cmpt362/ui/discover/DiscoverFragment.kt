@@ -1,36 +1,25 @@
 package com.example.munch_cmpt362.ui.discover
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.util.TypedValueCompat.dpToPx
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
-import com.example.munch_cmpt362.ui.reviews.ReviewAdapter
-import com.example.munch_cmpt362.ui.reviews.ReviewViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -55,6 +44,8 @@ import kotlin.math.sqrt
 //  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
 //  6) Make search work
 //  7) Also when in exapnded form, move shrink button to underneath list
+//  8) Also sort all restaurnants in this fragment by distance closes to you
+//      -> means i have to optimize this sort method
 
 @AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
@@ -70,7 +61,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     private val discoverViewModel: DiscoverViewModel by viewModels()
     private lateinit var recyclerView: RecyclerView
-    private lateinit var reviewAdapter : ReviewAdapter
+    private lateinit var discoverAdapter : DiscoverAdapter
     private lateinit var expandTextView : TextView
     private lateinit var labelTextView : TextView
 
@@ -86,8 +77,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
-        reviewAdapter = ReviewAdapter(emptyList(), lat, lng)
-        recyclerView.adapter = reviewAdapter
+        discoverAdapter = DiscoverAdapter(emptyList(), lat, lng)
+        recyclerView.adapter = discoverAdapter
 
         expandTextView = view.findViewById(R.id.expandTextView)
         labelTextView = view.findViewById(R.id.labelTextView)
@@ -129,8 +120,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = /*sortRestaurants(*/restaurants//)
-                reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
-                recyclerView.adapter = reviewAdapter
+                discoverAdapter = DiscoverAdapter(sortedRestaurants, lat, lng)
+                recyclerView.adapter = discoverAdapter
             } else {
                 recyclerView.visibility = View.GONE
 //                emptyTextView.visibility = View.VISIBLE
@@ -198,8 +189,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         val filteredList = listOf(restaurant)
 
         // Update the adapter with the filtered list (this will update the RecyclerView)
-        reviewAdapter = ReviewAdapter(filteredList, lat, lng)
-        recyclerView.adapter = reviewAdapter
+        discoverAdapter = DiscoverAdapter(filteredList, lat, lng)
+        recyclerView.adapter = discoverAdapter
 
         // Optionally, you can scroll to the specific item if you want
         val position = filteredList.indexOf(restaurant)
@@ -249,8 +240,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     fun updateRecyclerViewWithAllRestaurants(restaurants: List<Business>) {
         // Update the RecyclerView adapter with the full list of restaurants
-        reviewAdapter = ReviewAdapter(restaurants, lat, lng)
-        recyclerView.adapter = reviewAdapter
+        discoverAdapter = DiscoverAdapter(restaurants, lat, lng)
+        recyclerView.adapter = discoverAdapter
     }
 
     override fun onMapLongClick(latLng: LatLng) {
@@ -362,7 +353,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 //        reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
 //            if (restaurants.isNotEmpty()) {
 //                val sortedRestaurants = sortRestaurants(restaurants)
-//                reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
+//                reviewAdapter = DiscoverAdapter(sortedRestaurants, lat, lng)
 //                recyclerView.adapter = reviewAdapter
 //            } else {
 ////                noMoreRestaurantsText.visibility = View.VISIBLE
