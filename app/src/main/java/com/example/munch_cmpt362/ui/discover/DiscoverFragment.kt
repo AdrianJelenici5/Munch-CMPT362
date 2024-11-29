@@ -35,6 +35,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
@@ -48,12 +49,9 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // TODO:
-//  1) Show all locations in list on map as well
 //  2) If you click on element in list:
 //      -> Also zooms in on element in map, colors it diff color, and doesnt show any other element in list
 //      -> If you're in expanded mode when does this, kicks you back to shruken mode
-//  3) If you click on element in map:
-//      -> Also zooms in on element in map, colors it diff color, and doesnt show any other element in list
 //  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
 //  6) Make search work
 //  7) Also when in exapnded form, move shrink button to underneath list
@@ -74,6 +72,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     private lateinit var recyclerView: RecyclerView
     private lateinit var reviewAdapter : ReviewAdapter
     private lateinit var expandTextView : TextView
+    private lateinit var labelTextView : TextView
 
     private var lat = 0.0
     private var lng = 0.0
@@ -91,6 +90,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         recyclerView.adapter = reviewAdapter
 
         expandTextView = view.findViewById(R.id.expandTextView)
+        labelTextView = view.findViewById(R.id.labelTextView)
 
         expandTextView.setOnClickListener {
 
@@ -123,14 +123,11 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize map
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
-                // TODO: This is probs where we put map markers
-                //  or maybe we copy the restaurants.observe into onMapReady?
                 val sortedRestaurants = /*sortRestaurants(*/restaurants//)
                 reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
                 recyclerView.adapter = reviewAdapter
@@ -143,9 +140,9 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         discoverViewModel.fetchRestaurants(lat, lng)
     }
 
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         mMap.setOnMapClickListener(this)
         mMap.setOnMapLongClickListener(this)
@@ -153,7 +150,60 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         polylines = ArrayList()
         markerOptions = MarkerOptions()
 
+        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+            restaurants?.forEach { restaurant ->
+
+                val latLngPair = getLatLngFromAddress(requireContext(),
+                    "${restaurant.location.address1}, ${restaurant.location.city}, ${restaurant.location.country}")
+                val latLng = latLngPair?.let { LatLng(it.first, latLngPair.second) }
+                val markerOptions = latLng?.let {
+                    MarkerOptions()
+                        .position(it)
+                        .title(restaurant.name)
+                }
+                if (markerOptions != null) {
+                    mMap.addMarker(markerOptions)
+                }
+//                Log.d("ReviewFragment", "AJ: Restaurant: ${restaurant.name}")
+//                Log.d("ReviewFragment", "AJ: Location: ${latLng}")
+            }
+
+        }
+
+        mMap.setOnMarkerClickListener { marker ->
+            if (marker.title != null) {
+                Log.d("MarkerClick", "AJ: (inside onMapReady) Marker clicked: ${marker.title}")
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    val matchingRestaurant = restaurants.find { it.name == marker.title }
+                    matchingRestaurant?.let {
+                        // Update the RecyclerView to show only the clicked restaurant
+                        updateRecyclerViewWithRestaurant(it)
+                    }
+                }
+                labelTextView.text = "    Selected restuarant:"
+            } else {
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithAllRestaurants(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+            }
+            return@setOnMarkerClickListener false
+        }
+
         initLocationManager()
+    }
+
+    fun updateRecyclerViewWithRestaurant(restaurant: Business) {
+        // Create a list with only the matching restaurant
+        val filteredList = listOf(restaurant)
+
+        // Update the adapter with the filtered list (this will update the RecyclerView)
+        reviewAdapter = ReviewAdapter(filteredList, lat, lng)
+        recyclerView.adapter = reviewAdapter
+
+        // Optionally, you can scroll to the specific item if you want
+        val position = filteredList.indexOf(restaurant)
+        recyclerView.scrollToPosition(position)
     }
 
     private fun initLocationManager() {
@@ -183,6 +233,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
             val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)
             mMap.animateCamera(cameraUpdate)
             markerOptions.position(latLng)
+            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
             mMap.addMarker(markerOptions)
             polylineOptions.add(latLng)
             mapCentered = true
@@ -190,8 +241,16 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     }
 
     override fun onMapClick(latLng: LatLng) {
-//        for (polyline in polylines) polyline.remove()
-//        polylineOptions.points.clear()
+        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+            updateRecyclerViewWithAllRestaurants(restaurants)
+        }
+        labelTextView.text = "    All restaurants in your area:"
+    }
+
+    fun updateRecyclerViewWithAllRestaurants(restaurants: List<Business>) {
+        // Update the RecyclerView adapter with the full list of restaurants
+        reviewAdapter = ReviewAdapter(restaurants, lat, lng)
+        recyclerView.adapter = reviewAdapter
     }
 
     override fun onMapLongClick(latLng: LatLng) {
