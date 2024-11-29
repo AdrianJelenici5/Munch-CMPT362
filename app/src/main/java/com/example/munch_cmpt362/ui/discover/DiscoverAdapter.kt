@@ -26,7 +26,10 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class DiscoverAdapter(private var restaurants: List<Business>, private val currentLat: Double, private val currentLng: Double
+class DiscoverAdapter(private var restaurants: List<Business>,
+                      private val currentLat: Double,
+                      private val currentLng: Double,
+                      private val onItemClicked: (Business) -> Unit
 ) : RecyclerView.Adapter<DiscoverAdapter.DiscoverViewHolder>() {
 
     fun updateData(newRestaurants: List<Business>) {
@@ -43,6 +46,9 @@ class DiscoverAdapter(private var restaurants: List<Business>, private val curre
     override fun onBindViewHolder(holder: DiscoverViewHolder, position: Int) {
         // Log.d("XD:", "XD: onBindViewHolder")
         val restaurant = restaurants[position]
+        holder.itemView.setOnClickListener {
+            onItemClicked(restaurant) // Trigger the callback
+        }
         holder.bind(restaurant, holder.itemView.context)
     }
 
@@ -100,12 +106,6 @@ class DiscoverAdapter(private var restaurants: List<Business>, private val curre
 
             Glide.with(itemView.context).load(restaurant.image_url).into(imageView)
             //locationTextView.text = restaurant.location
-
-            itemView.setOnClickListener {
-                Log.d("XD:", "XD: Item Clicked")
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.url))
-                itemView.context.startActivity(intent)
-            }
 
         }
 

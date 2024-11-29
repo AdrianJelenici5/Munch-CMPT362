@@ -26,6 +26,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
@@ -70,6 +71,31 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     private var expanded = false
 
+    val markersMap = mutableMapOf<String, Marker>()
+    // Define what happens when an item is clicked in the RecyclerView
+    val onItemClicked: (Business) -> Unit = { restaurant ->
+        Log.d("AJ:", "AJ: Item Clicked 1")
+
+        // Log the contents of the markersMap
+        Log.d("AJ:", "AJ: markersMap contents: $markersMap")
+
+        // Find the marker with the same title as the restaurant name
+        val marker = markersMap[restaurant.name]
+
+        Log.d("AJ:", "AJ: Item Clicked 2")
+        Log.d("AJ:", "AJ: Looking for marker with name: ${restaurant.name}")
+
+        if (marker != null) {
+            Log.d("AJ:", "AJ: Marker found: ${marker.title}")
+            Log.d("AJ:", "AJ: Item Clicked 3")
+
+            // Simulate clicking the marker
+            onMarkerClick(marker)
+        } else {
+            Log.d("AJ:", "AJ: Marker with name ${restaurant.name} not found.")
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_discover, container, false)
@@ -77,7 +103,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
-        discoverAdapter = DiscoverAdapter(emptyList(), lat, lng)
+        discoverAdapter = DiscoverAdapter(emptyList(), lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
 
         expandTextView = view.findViewById(R.id.expandTextView)
@@ -120,7 +146,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (restaurants.isNotEmpty()) {
                 val sortedRestaurants = /*sortRestaurants(*/restaurants//)
-                discoverAdapter = DiscoverAdapter(sortedRestaurants, lat, lng)
+                discoverAdapter = DiscoverAdapter(sortedRestaurants, lat, lng, onItemClicked)
                 recyclerView.adapter = discoverAdapter
             } else {
                 recyclerView.visibility = View.GONE
@@ -155,6 +181,14 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 if (markerOptions != null) {
                     mMap.addMarker(markerOptions)
                 }
+                markerOptions?.let { marker ->
+                    val mapMarker = mMap.addMarker(marker)
+                    if (mapMarker != null) {
+                        // Store the marker in the map with restaurant name as key
+                        markersMap[restaurant.name] = mapMarker
+                        Log.d("AJ:", "Marker added for ${restaurant.name}")
+                    }
+                }
 //                Log.d("ReviewFragment", "AJ: Restaurant: ${restaurant.name}")
 //                Log.d("ReviewFragment", "AJ: Location: ${latLng}")
             }
@@ -162,34 +196,40 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         }
 
         mMap.setOnMarkerClickListener { marker ->
-            if (marker.title != null) {
-                Log.d("MarkerClick", "AJ: (inside onMapReady) Marker clicked: ${marker.title}")
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    val matchingRestaurant = restaurants.find { it.name == marker.title }
-                    matchingRestaurant?.let {
-                        // Update the RecyclerView to show only the clicked restaurant
-                        updateRecyclerViewWithRestaurant(it)
-                    }
-                }
-                labelTextView.text = "    Selected restuarant:"
-            } else {
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    updateRecyclerViewWithAllRestaurants(restaurants)
-                }
-                labelTextView.text = "    All restaurants in your area:"
-            }
+            onMarkerClick(marker)
             return@setOnMarkerClickListener false
         }
 
         initLocationManager()
     }
 
+    private fun onMarkerClick(marker: Marker) {
+        Log.d("MarkerClick", "AJ: Marker clicked: ${marker.title}")
+        if (marker.title != null) {
+            Log.d("MarkerClick", "AJ: (inside onMapReady) Marker clicked: ${marker.title}")
+            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                val matchingRestaurant = restaurants.find { it.name == marker.title }
+                matchingRestaurant?.let {
+                    // Update the RecyclerView to show only the clicked restaurant
+                    updateRecyclerViewWithRestaurant(it)
+                }
+            }
+            labelTextView.text = "    Selected restuarant:"
+        } else {
+            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                updateRecyclerViewWithAllRestaurants(restaurants)
+            }
+            labelTextView.text = "    All restaurants in your area:"
+        }
+    }
+
+
     fun updateRecyclerViewWithRestaurant(restaurant: Business) {
         // Create a list with only the matching restaurant
         val filteredList = listOf(restaurant)
 
         // Update the adapter with the filtered list (this will update the RecyclerView)
-        discoverAdapter = DiscoverAdapter(filteredList, lat, lng)
+        discoverAdapter = DiscoverAdapter(filteredList, lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
 
         // Optionally, you can scroll to the specific item if you want
@@ -240,7 +280,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     fun updateRecyclerViewWithAllRestaurants(restaurants: List<Business>) {
         // Update the RecyclerView adapter with the full list of restaurants
-        discoverAdapter = DiscoverAdapter(restaurants, lat, lng)
+        discoverAdapter = DiscoverAdapter(restaurants, lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
     }
 
