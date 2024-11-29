@@ -20,19 +20,6 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@+id/expandTextView"/>
 
-        <!-- Clickable TextView above RecyclerView -->
-        <TextView
-            android:id="@+id/expandTextView"
-            android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:background="@drawable/top_bottom_border"
-            android:gravity="center"
-            android:paddingBottom="3dp"
-            android:text="expand"
-            android:textColor="@android:color/black"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toTopOf="@id/labelTextView" />
-
         <!-- New TextView Label -->
         <TextView
             android:id="@+id/labelTextView"
@@ -55,6 +42,19 @@
             android:layout_marginTop="475dp"
             android:background="@android:color/white"
             app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Clickable TextView above RecyclerView -->
+        <TextView
+            android:id="@+id/expandTextView"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:background="@drawable/top_bottom_border"
+            android:gravity="center"
+            android:paddingBottom="3dp"
+            android:text="expand"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toTopOf="@id/labelTextView" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

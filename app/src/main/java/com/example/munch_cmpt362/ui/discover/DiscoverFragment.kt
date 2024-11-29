@@ -39,11 +39,14 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // TODO:
-//  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
+//  5) make text box bigger when in expanded mode or when searching
 //  6) Make search work
-//  7) Also when in exapnded form, move shrink button to underneath list
 //  8) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
+
+// NOT GONNA TODO:
+//  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
+//  7) Also when in exapnded form, move shrink button to underneath list
 
 @AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
@@ -71,22 +74,8 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     val markersMap = mutableMapOf<String, Marker>()
     // Define what happens when an item is clicked in the RecyclerView
     val onItemClicked: (Business) -> Unit = { restaurant ->
-        Log.d("AJ:", "AJ: Item Clicked 1")
-
-        // Log the contents of the markersMap
-        Log.d("AJ:", "AJ: markersMap contents: $markersMap")
-
-        // Find the marker with the same title as the restaurant name
         val marker = markersMap[restaurant.name]
-
-        Log.d("AJ:", "AJ: Item Clicked 2")
-        Log.d("AJ:", "AJ: Looking for marker with name: ${restaurant.name}")
-
         if (marker != null) {
-            Log.d("AJ:", "AJ: Marker found: ${marker.title}")
-            Log.d("AJ:", "AJ: Item Clicked 3")
-
-            // Simulate clicking the marker
             onMarkerClick(marker)
         } else {
             Log.d("AJ:", "AJ: Marker with name ${restaurant.name} not found.")
@@ -110,7 +99,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
             if (expanded == false) {
                 val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = dpToPx(140) // Set the top margin to 100
+                params.topMargin = dpToPx(135) // Set the top margin to 100
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
                 expandTextView.text = "shrink"
