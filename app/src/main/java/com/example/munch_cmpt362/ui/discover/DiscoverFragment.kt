@@ -42,14 +42,9 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // TODO:
-//  5) when searching, go into expand mode
-//      --> Also potetnially make textbox bigger in expanded mode
-//  6) Make search work
-//      --> I.e. recyler view dynamically changes to show names that match current input in searchview
 //  7) Make label clickable so you can go back ?
 //  8) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
-//  9) Also potentialyl draw path from your position to restaurants when clicking resataurant?
 
 // NOT GONNA TODO:
 //  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
@@ -108,11 +103,20 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         expandTextView.setOnClickListener {
 
             if (expanded == false) {
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithAllRestaurants(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+                for (marker in markersMap.values) {
+                    marker.hideInfoWindow()
+                }
+                mapCentered = false
+                initLocationManager()
                 val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
                 params.topMargin = dpToPx(135) // Set the top margin to 100
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
-                expandTextView.text = "shrink"
+                expandTextView.text = "exit"
                 expanded = true
             }
             else {
@@ -120,15 +124,19 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 params.topMargin = dpToPx(475) // Set the top margin to 100
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
-                expandTextView.text = "expand"
+                expandTextView.text = "expand list"
                 searchView.clearFocus()
                 expanded = false
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithAllRestaurants(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+                searchView.setQuery("", false)
             }
 
         }
 
         // TODO: Why does clicking search icon show all restuarants?
-        // Todo: Why does clicking x go into expanded mode? Fix that
 
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
@@ -137,24 +145,40 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                     updateRecyclerViewWithAllRestaurants(restaurants)
                 }
                 labelTextView.text = "    All restaurants in your area:"
-                // TODO: click on marker that represents you
+                for (marker in markersMap.values) {
+                    marker.hideInfoWindow()
+                }
+                mapCentered = false
+                initLocationManager()
                 val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
                 params.topMargin = dpToPx(135) // Set the top margin to 100
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
-                expandTextView.text = "shrink"
+                expandTextView.text = "exit"
                 expanded = true
-            } else {
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    updateRecyclerViewWithAllRestaurants(restaurants)
+            }
+        }
+
+        searchView.setOnClickListener {
+            val searchQuery = searchView.query.toString()
+            Log.d("SearchView", "Search icon clicked with query: $searchQuery")
+            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                if (searchQuery.isEmpty()) {
+                    updateRecyclerViewWithRestaurantList(restaurants)
+                    labelTextView.text = "    All restaurants in your area:"
+                } else {
+                    val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
+                    if (matchingRestaurant != null) {
+                        updateRecyclerViewWithRestaurant(matchingRestaurant)
+                    } else {
+                        updateRecyclerViewWithRestaurantList(emptyList())
+                    }
                 }
-                labelTextView.text = "    All restaurants in your area:"
-                // TODO: clear search bar
             }
         }
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            // TODO: if searchQuery is empty, show all restaurants
+
             override fun onQueryTextSubmit(query: String?): Boolean {
                 query?.let { searchQuery ->
                     labelTextView.text = "    Search Results for '$searchQuery':"
@@ -196,6 +220,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 }
                 return true
             }
+
         })
 
         return view
@@ -223,7 +248,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         }
         discoverViewModel.fetchRestaurants(lat, lng)
     }
-
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -292,10 +316,10 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         marker.showInfoWindow()
 
         val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-        params.topMargin = dpToPx(475) // Set the top margin to 100
+        params.topMargin = dpToPx(475)
         recyclerView.layoutParams = params
         recyclerView.requestLayout()
-        expandTextView.text = "expand"
+        expandTextView.text = "expand list"
         expanded = false
 
         searchView.clearFocus()
