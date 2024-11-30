@@ -1,6 +1,5 @@
 package com.example.munch_cmpt362.ui.discover
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.location.Address
@@ -11,7 +10,6 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SearchView
@@ -37,12 +35,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 
 // TODO:
-//  1) Change 'Selected Restaurant' to '<- Back to Full List'
-//  2) Make expand and shrink always keep the same restaurant
+//  2) Make clicking x not go into expanded view
 //  3) Make expanded view look better
-//  4) Make onQueryChange show restaurants similar
-//      -> if it restaurant name contains current searchQuery with at most one differences
-//      -> i.e. 'sub' shows 'subway' AND 'sab' also shows 'subway'
 //  5) Add a view model for horizantal changes
 //  6) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
@@ -72,6 +66,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     private var lng = 0.0
 
     private var expanded = false
+    private var isFocused = false
 
     val markersMap = mutableMapOf<String, Marker>()
     val onItemClicked: (Business) -> Unit = { restaurant ->
@@ -80,6 +75,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
             onMarkerClick(marker)
         }
         searchView.clearFocus()
+        isFocused = false
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -105,7 +101,14 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         /////////////////////////////
 
         labelTextView.setOnClickListener {
-
+            if (labelTextView.text.equals("    <- Back to full list") ) {
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithRestaurantList(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+                searchView.setQuery("", false)
+                resetMap()
+            }
         }
 
         ///////////////////////////
@@ -125,11 +128,15 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 expandTextView.text = "expand list"
                 searchView.clearFocus()
                 expanded = false
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    updateRecyclerViewWithAllRestaurants(restaurants)
+                if (isFocused) {
+                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                        updateRecyclerViewWithRestaurantList(restaurants)
+                    }
+                    labelTextView.text = "    All restaurants in your area:"
+                    searchView.setQuery("", false)
+                    resetMap()
                 }
-                labelTextView.text = "    All restaurants in your area:"
-                searchView.setQuery("", false)
+                isFocused = false
             }
 
         }
@@ -140,27 +147,43 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
+                val searchQuery = searchView.query.toString()
+                if (searchQuery != null) {
+                    updateListOnQueryChange(searchQuery)
+                }
+                else {
+                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                        updateRecyclerViewWithRestaurantList(restaurants)
+                    }
+                    labelTextView.text = "    All restaurants in your area:"
+                    for (marker in markersMap.values) {
+                        marker.hideInfoWindow()
+                    }
+                }
+                mapCentered = false
+                initLocationManager()
                 expandList()
+                isFocused = true
             }
         }
 
         searchView.setOnClickListener {
             val searchQuery = searchView.query.toString()
-            updateList(searchQuery)
+            updateListOnQueryChange(searchQuery)
         }
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 query?.let { searchQuery ->
-                    updateList(searchQuery)
+                    updateListOnQueryChange(searchQuery)
                 }
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 newText?.let {searchQuery ->
-                    updateList(searchQuery)
+                    updateListOnQueryChange(searchQuery)
                 }
                 return true
             }
@@ -254,7 +277,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     }
 
     override fun onLocationChanged(location: Location) {
-        println("debug: onLocationChanged() ${location.latitude} ${location.longitude}")
         val latLng = LatLng(location.latitude, location.longitude)
         if (!mapCentered) {
             val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)
@@ -269,7 +291,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     override fun onMapClick(latLng: LatLng) {
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-            updateRecyclerViewWithAllRestaurants(restaurants)
+            updateRecyclerViewWithRestaurantList(restaurants)
         }
         searchView.clearFocus()
         labelTextView.text = "    All restaurants in your area:"
@@ -283,10 +305,10 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                     updateRecyclerViewWithRestaurant(it)
                 }
             }
-            labelTextView.text = "    Selected restuarant:"
+            labelTextView.text = "    <- Back to full list"
         } else {
             discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                updateRecyclerViewWithAllRestaurants(restaurants)
+                updateRecyclerViewWithRestaurantList(restaurants)
             }
             labelTextView.text = "    All restaurants in your area:"
         }
@@ -308,6 +330,14 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         return true
     }
 
+    private fun resetMap() {
+        for (marker in markersMap.values) {
+            marker.hideInfoWindow()
+        }
+        mapCentered = false
+        initLocationManager()
+    }
+
     fun updateLocation(latitude: Double, longitude: Double) {
         lat = latitude
         lng = longitude
@@ -317,7 +347,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     // RECYCLER VIEW FUNCTIONS //
     /////////////////////////////
 
-    fun updateRecyclerViewWithAllRestaurants(restaurants: List<Business>) {
+    fun updateRecyclerViewWithRestaurantList(restaurants: List<Business>) {
         discoverAdapter = DiscoverAdapter(restaurants, lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
     }
@@ -330,21 +360,32 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         recyclerView.scrollToPosition(position)
     }
 
-    private fun updateList(searchQuery: String) {
-        labelTextView.text = "    Search Results for '$searchQuery':"
+    private fun updateListOnQueryChange(searchQuery: String) {
+        labelTextView.text = "    Search Results like '$searchQuery':"
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (searchQuery.isEmpty()) {
-                updateRecyclerViewWithAllRestaurants(restaurants)
+                updateRecyclerViewWithRestaurantList(restaurants)
                 labelTextView.text = "    All restaurants in your area:"
             } else {
-                val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
-                if (matchingRestaurant != null) {
-                    updateRecyclerViewWithRestaurant(matchingRestaurant)
+                val matchingRestaurants = findSimilarRestaurants(restaurants, searchQuery)
+                if (matchingRestaurants != null) {
+                    updateRecyclerViewWithRestaurantList(matchingRestaurants)
                 } else {
-                    updateRecyclerViewWithAllRestaurants(emptyList())
+                    updateRecyclerViewWithRestaurantList(emptyList())
                 }
             }
         }
+    }
+
+    fun findSimilarRestaurants(restaurants: List<Business>, searchQuery: String): List<Business> {
+        val similarRestaurants = mutableListOf<Business>()
+        for (restaurant in restaurants) {
+            val restaurantName = restaurant.name
+            if (restaurantName.contains(searchQuery, ignoreCase = true)) {
+                similarRestaurants.add(restaurant)
+            }
+        }
+        return similarRestaurants
     }
 
     /////////////////////////////
@@ -352,15 +393,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     ////////////////////////////
 
     private fun expandList() {
-        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-            updateRecyclerViewWithAllRestaurants(restaurants)
-        }
-        labelTextView.text = "    All restaurants in your area:"
-        for (marker in markersMap.values) {
-            marker.hideInfoWindow()
-        }
-        mapCentered = false
-        initLocationManager()
         val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
         params.topMargin = dpToPx(135) // Set the top margin to 100
         recyclerView.layoutParams = params
