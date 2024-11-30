@@ -1,5 +1,6 @@
 package com.example.munch_cmpt362.ui.discover
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.location.Address
@@ -10,8 +11,10 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.SearchView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
@@ -39,10 +42,14 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // TODO:
-//  5) make text box bigger when in expanded mode or when searching
+//  5) when searching, go into expand mode
+//      --> Also potetnially make textbox bigger in expanded mode
 //  6) Make search work
+//      --> I.e. recyler view dynamically changes to show names that match current input in searchview
+//  7) Make label clickable so you can go back ?
 //  8) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
+//  9) Also potentialyl draw path from your position to restaurants when clicking resataurant?
 
 // NOT GONNA TODO:
 //  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
@@ -65,6 +72,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     private lateinit var discoverAdapter : DiscoverAdapter
     private lateinit var expandTextView : TextView
     private lateinit var labelTextView : TextView
+    private lateinit var searchView : SearchView
 
     private var lat = 0.0
     private var lng = 0.0
@@ -80,6 +88,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         } else {
             Log.d("AJ:", "AJ: Marker with name ${restaurant.name} not found.")
         }
+        searchView.clearFocus()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -94,6 +103,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         expandTextView = view.findViewById(R.id.expandTextView)
         labelTextView = view.findViewById(R.id.labelTextView)
+        searchView = view.findViewById(R.id.search_view)
 
         expandTextView.setOnClickListener {
 
@@ -111,10 +121,82 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 recyclerView.layoutParams = params
                 recyclerView.requestLayout()
                 expandTextView.text = "expand"
+                searchView.clearFocus()
                 expanded = false
             }
 
         }
+
+        // TODO: Why does clicking search icon show all restuarants?
+        // Todo: Why does clicking x go into expanded mode? Fix that
+
+        searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                Log.d("SearchView", "AJ: Focused on searchview")
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithAllRestaurants(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+                // TODO: click on marker that represents you
+                val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
+                params.topMargin = dpToPx(135) // Set the top margin to 100
+                recyclerView.layoutParams = params
+                recyclerView.requestLayout()
+                expandTextView.text = "shrink"
+                expanded = true
+            } else {
+                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                    updateRecyclerViewWithAllRestaurants(restaurants)
+                }
+                labelTextView.text = "    All restaurants in your area:"
+                // TODO: clear search bar
+            }
+        }
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            // TODO: if searchQuery is empty, show all restaurants
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let { searchQuery ->
+                    labelTextView.text = "    Search Results for '$searchQuery':"
+                    Log.d("SearchView", "AJ: Query submitted: $searchQuery")
+                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                        if (searchQuery.isEmpty()) {
+                            updateRecyclerViewWithRestaurantList(restaurants)
+                            labelTextView.text = "    All restaurants in your area:"
+                        } else {
+                            val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
+                            if (matchingRestaurant != null) {
+                                updateRecyclerViewWithRestaurant(matchingRestaurant)
+                            } else {
+                                updateRecyclerViewWithRestaurantList(emptyList())
+                            }
+                        }
+                    }
+                }
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                newText?.let {searchQuery ->
+                    labelTextView.text = "    Search Results for '$searchQuery':"
+                    Log.d("SearchView", "AJ: Query changed: $searchQuery")
+                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                        if (searchQuery.isEmpty()) {
+                            updateRecyclerViewWithRestaurantList(restaurants)
+                            labelTextView.text = "    All restaurants in your area:"
+                        } else {
+                            val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
+                            if (matchingRestaurant != null) {
+                                updateRecyclerViewWithRestaurant(matchingRestaurant)
+                            } else {
+                                updateRecyclerViewWithRestaurantList(emptyList())
+                            }
+                        }
+                    }
+                }
+                return true
+            }
+        })
 
         return view
     }
@@ -136,7 +218,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 recyclerView.adapter = discoverAdapter
             } else {
                 recyclerView.visibility = View.GONE
-//                emptyTextView.visibility = View.VISIBLE
                 Log.d("XD:", "No restaurants available.")
             }
         }
@@ -175,8 +256,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                         Log.d("AJ:", "Marker added for ${restaurant.name}")
                     }
                 }
-//                Log.d("ReviewFragment", "AJ: Restaurant: ${restaurant.name}")
-//                Log.d("ReviewFragment", "AJ: Location: ${latLng}")
             }
 
         }
@@ -219,21 +298,38 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         expandTextView.text = "expand"
         expanded = false
 
+        searchView.clearFocus()
+
         return true
     }
 
     fun updateRecyclerViewWithRestaurant(restaurant: Business) {
-        // Create a list with only the matching restaurant
         val filteredList = listOf(restaurant)
-
-        // Update the adapter with the filtered list (this will update the RecyclerView)
         discoverAdapter = DiscoverAdapter(filteredList, lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
-
-        // Optionally, you can scroll to the specific item if you want
         val position = filteredList.indexOf(restaurant)
         recyclerView.scrollToPosition(position)
     }
+
+    fun updateRecyclerViewWithRestaurantList(restaurants: List<Business>) {
+        discoverAdapter = DiscoverAdapter(restaurants, lat, lng, onItemClicked)
+        recyclerView.adapter = discoverAdapter
+    }
+
+//    private fun filterRestaurants(query: String) {
+//        val matchedRestaurant = allRestaurants.find { restaurant ->
+//            restaurant.name.equals(query, ignoreCase = true) // Match restaurant name ignoring case
+//        }
+//
+//        if (matchedRestaurant != null) {
+//            updateRecyclerViewWithRestaurant(matchedRestaurant)
+//        } else {
+//            Log.d("SearchView", "No matching restaurant found for query: $query")
+//            // Optionally clear or show empty results
+//            discoverAdapter = DiscoverAdapter(emptyList(), lat, lng, onItemClicked)
+//            recyclerView.adapter = discoverAdapter
+//        }
+//    }
 
     private fun initLocationManager() {
         try {
@@ -273,6 +369,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             updateRecyclerViewWithAllRestaurants(restaurants)
         }
+        searchView.clearFocus()
         labelTextView.text = "    All restaurants in your area:"
     }
 
