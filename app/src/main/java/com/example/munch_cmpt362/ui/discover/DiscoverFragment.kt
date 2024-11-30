@@ -35,24 +35,23 @@ import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 // TODO:
-//  7) Make label clickable so you can go back ?
-//  8) Also sort all restaurnants in this fragment by distance closes to you
+//  1) Change 'Selected Restaurant' to '<- Back to Full List'
+//  2) Make expand and shrink always keep the same restaurant
+//  3) Make expanded view look better
+//  4) Make onQueryChange show restaurants similar
+//      -> if it restaurant name contains current searchQuery with at most one differences
+//      -> i.e. 'sub' shows 'subway' AND 'sab' also shows 'subway'
+//  5) Add a view model for horizantal changes
+//  6) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
+//  7) Determine why cant scroll to bottom of recyler view
 
-// NOT GONNA TODO:
-//  4) For both of those above, below the restaurnt in lst view will be a button to go back to default view of all restaurnts
-//  7) Also when in exapnded form, move shrink button to underneath list
 
 @AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
-    GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
+    GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var locationManager: LocationManager
@@ -75,13 +74,10 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     private var expanded = false
 
     val markersMap = mutableMapOf<String, Marker>()
-    // Define what happens when an item is clicked in the RecyclerView
     val onItemClicked: (Business) -> Unit = { restaurant ->
         val marker = markersMap[restaurant.name]
         if (marker != null) {
             onMarkerClick(marker)
-        } else {
-            Log.d("AJ:", "AJ: Marker with name ${restaurant.name} not found.")
         }
         searchView.clearFocus()
     }
@@ -89,6 +85,10 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_discover, container, false)
+
+        /////////////////////////
+        // DEFINING VARIABLES //
+        ////////////////////////
 
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
@@ -100,24 +100,22 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         labelTextView = view.findViewById(R.id.labelTextView)
         searchView = view.findViewById(R.id.search_view)
 
+        //////////////////////////////
+        // LIST VIEW FUNCTIONALITY //
+        /////////////////////////////
+
+        labelTextView.setOnClickListener {
+
+        }
+
+        ///////////////////////////
+        // EXPAND FUNCTIONALITY //
+        //////////////////////////
+
         expandTextView.setOnClickListener {
 
             if (expanded == false) {
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    updateRecyclerViewWithAllRestaurants(restaurants)
-                }
-                labelTextView.text = "    All restaurants in your area:"
-                for (marker in markersMap.values) {
-                    marker.hideInfoWindow()
-                }
-                mapCentered = false
-                initLocationManager()
-                val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = dpToPx(135) // Set the top margin to 100
-                recyclerView.layoutParams = params
-                recyclerView.requestLayout()
-                expandTextView.text = "exit"
-                expanded = true
+                expandList()
             }
             else {
                 val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
@@ -136,87 +134,33 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         }
 
-        // TODO: Why does clicking search icon show all restuarants?
+        ////////////////////////////////
+        // SEARCH VIEW FUNCTIONALITY //
+        ///////////////////////////////
 
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                Log.d("SearchView", "AJ: Focused on searchview")
-                discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                    updateRecyclerViewWithAllRestaurants(restaurants)
-                }
-                labelTextView.text = "    All restaurants in your area:"
-                for (marker in markersMap.values) {
-                    marker.hideInfoWindow()
-                }
-                mapCentered = false
-                initLocationManager()
-                val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = dpToPx(135) // Set the top margin to 100
-                recyclerView.layoutParams = params
-                recyclerView.requestLayout()
-                expandTextView.text = "exit"
-                expanded = true
+                expandList()
             }
         }
 
         searchView.setOnClickListener {
             val searchQuery = searchView.query.toString()
-            Log.d("SearchView", "Search icon clicked with query: $searchQuery")
-            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                if (searchQuery.isEmpty()) {
-                    updateRecyclerViewWithRestaurantList(restaurants)
-                    labelTextView.text = "    All restaurants in your area:"
-                } else {
-                    val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
-                    if (matchingRestaurant != null) {
-                        updateRecyclerViewWithRestaurant(matchingRestaurant)
-                    } else {
-                        updateRecyclerViewWithRestaurantList(emptyList())
-                    }
-                }
-            }
+            updateList(searchQuery)
         }
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 query?.let { searchQuery ->
-                    labelTextView.text = "    Search Results for '$searchQuery':"
-                    Log.d("SearchView", "AJ: Query submitted: $searchQuery")
-                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                        if (searchQuery.isEmpty()) {
-                            updateRecyclerViewWithRestaurantList(restaurants)
-                            labelTextView.text = "    All restaurants in your area:"
-                        } else {
-                            val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
-                            if (matchingRestaurant != null) {
-                                updateRecyclerViewWithRestaurant(matchingRestaurant)
-                            } else {
-                                updateRecyclerViewWithRestaurantList(emptyList())
-                            }
-                        }
-                    }
+                    updateList(searchQuery)
                 }
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 newText?.let {searchQuery ->
-                    labelTextView.text = "    Search Results for '$searchQuery':"
-                    Log.d("SearchView", "AJ: Query changed: $searchQuery")
-                    discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                        if (searchQuery.isEmpty()) {
-                            updateRecyclerViewWithRestaurantList(restaurants)
-                            labelTextView.text = "    All restaurants in your area:"
-                        } else {
-                            val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
-                            if (matchingRestaurant != null) {
-                                updateRecyclerViewWithRestaurant(matchingRestaurant)
-                            } else {
-                                updateRecyclerViewWithRestaurantList(emptyList())
-                            }
-                        }
-                    }
+                    updateList(searchQuery)
                 }
                 return true
             }
@@ -224,10 +168,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         })
 
         return view
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -249,11 +189,14 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         discoverViewModel.fetchRestaurants(lat, lng)
     }
 
+    ////////////////////
+    // MAP FUNCTIONS //
+    ///////////////////
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         mMap.setOnMapClickListener(this)
-        mMap.setOnMapLongClickListener(this)
         polylineOptions = PolylineOptions().color(Color.BLACK)
         polylines = ArrayList()
         markerOptions = MarkerOptions()
@@ -275,7 +218,6 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 markerOptions?.let { marker ->
                     val mapMarker = mMap.addMarker(marker)
                     if (mapMarker != null) {
-                        // Store the marker in the map with restaurant name as key
                         markersMap[restaurant.name] = mapMarker
                         Log.d("AJ:", "Marker added for ${restaurant.name}")
                     }
@@ -286,74 +228,10 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
         mMap.setOnMarkerClickListener { marker ->
             onMarkerClick(marker)
-            //return@setOnMarkerClickListener false
         }
 
         initLocationManager()
     }
-
-    override fun onMarkerClick(marker: Marker): Boolean {
-        if (marker.title != null) {
-            Log.d("MarkerClick", "AJ: (inside onMapReady) Marker clicked: ${marker.title}")
-            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                val matchingRestaurant = restaurants.find { it.name == marker.title }
-                matchingRestaurant?.let {
-                    // Update the RecyclerView to show only the clicked restaurant
-                    updateRecyclerViewWithRestaurant(it)
-                }
-            }
-            labelTextView.text = "    Selected restuarant:"
-        } else {
-            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-                updateRecyclerViewWithAllRestaurants(restaurants)
-            }
-            labelTextView.text = "    All restaurants in your area:"
-        }
-
-        val latLng = marker.position
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)  // Zoom level of 15
-        mMap.animateCamera(cameraUpdate)
-        marker.showInfoWindow()
-
-        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-        params.topMargin = dpToPx(475)
-        recyclerView.layoutParams = params
-        recyclerView.requestLayout()
-        expandTextView.text = "expand list"
-        expanded = false
-
-        searchView.clearFocus()
-
-        return true
-    }
-
-    fun updateRecyclerViewWithRestaurant(restaurant: Business) {
-        val filteredList = listOf(restaurant)
-        discoverAdapter = DiscoverAdapter(filteredList, lat, lng, onItemClicked)
-        recyclerView.adapter = discoverAdapter
-        val position = filteredList.indexOf(restaurant)
-        recyclerView.scrollToPosition(position)
-    }
-
-    fun updateRecyclerViewWithRestaurantList(restaurants: List<Business>) {
-        discoverAdapter = DiscoverAdapter(restaurants, lat, lng, onItemClicked)
-        recyclerView.adapter = discoverAdapter
-    }
-
-//    private fun filterRestaurants(query: String) {
-//        val matchedRestaurant = allRestaurants.find { restaurant ->
-//            restaurant.name.equals(query, ignoreCase = true) // Match restaurant name ignoring case
-//        }
-//
-//        if (matchedRestaurant != null) {
-//            updateRecyclerViewWithRestaurant(matchedRestaurant)
-//        } else {
-//            Log.d("SearchView", "No matching restaurant found for query: $query")
-//            // Optionally clear or show empty results
-//            discoverAdapter = DiscoverAdapter(emptyList(), lat, lng, onItemClicked)
-//            recyclerView.adapter = discoverAdapter
-//        }
-//    }
 
     private fun initLocationManager() {
         try {
@@ -397,18 +275,120 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         labelTextView.text = "    All restaurants in your area:"
     }
 
+    override fun onMarkerClick(marker: Marker): Boolean {
+        if (marker.title != null) {
+            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                val matchingRestaurant = restaurants.find { it.name == marker.title }
+                matchingRestaurant?.let {
+                    updateRecyclerViewWithRestaurant(it)
+                }
+            }
+            labelTextView.text = "    Selected restuarant:"
+        } else {
+            discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+                updateRecyclerViewWithAllRestaurants(restaurants)
+            }
+            labelTextView.text = "    All restaurants in your area:"
+        }
+
+        val latLng = marker.position
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)  // Zoom level of 15
+        mMap.animateCamera(cameraUpdate)
+        marker.showInfoWindow()
+
+        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
+        params.topMargin = dpToPx(475)
+        recyclerView.layoutParams = params
+        recyclerView.requestLayout()
+        expandTextView.text = "expand list"
+        expanded = false
+
+        searchView.clearFocus()
+
+        return true
+    }
+
+    fun updateLocation(latitude: Double, longitude: Double) {
+        lat = latitude
+        lng = longitude
+    }
+
+    //////////////////////////////
+    // RECYCLER VIEW FUNCTIONS //
+    /////////////////////////////
+
     fun updateRecyclerViewWithAllRestaurants(restaurants: List<Business>) {
-        // Update the RecyclerView adapter with the full list of restaurants
         discoverAdapter = DiscoverAdapter(restaurants, lat, lng, onItemClicked)
         recyclerView.adapter = discoverAdapter
     }
 
-    override fun onMapLongClick(latLng: LatLng) {
-//        markerOptions.position(latLng)
-//        mMap.addMarker(markerOptions)
-//        polylineOptions.add(latLng)
-//        polylines.add(mMap.addPolyline(polylineOptions))
+    fun updateRecyclerViewWithRestaurant(restaurant: Business) {
+        val filteredList = listOf(restaurant)
+        discoverAdapter = DiscoverAdapter(filteredList, lat, lng, onItemClicked)
+        recyclerView.adapter = discoverAdapter
+        val position = filteredList.indexOf(restaurant)
+        recyclerView.scrollToPosition(position)
     }
+
+    private fun updateList(searchQuery: String) {
+        labelTextView.text = "    Search Results for '$searchQuery':"
+        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+            if (searchQuery.isEmpty()) {
+                updateRecyclerViewWithAllRestaurants(restaurants)
+                labelTextView.text = "    All restaurants in your area:"
+            } else {
+                val matchingRestaurant = restaurants.find { it.name.equals(searchQuery, ignoreCase = true) }
+                if (matchingRestaurant != null) {
+                    updateRecyclerViewWithRestaurant(matchingRestaurant)
+                } else {
+                    updateRecyclerViewWithAllRestaurants(emptyList())
+                }
+            }
+        }
+    }
+
+    /////////////////////////////
+    // OTHER HELPER FUNCTIONS //
+    ////////////////////////////
+
+    private fun expandList() {
+        discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
+            updateRecyclerViewWithAllRestaurants(restaurants)
+        }
+        labelTextView.text = "    All restaurants in your area:"
+        for (marker in markersMap.values) {
+            marker.hideInfoWindow()
+        }
+        mapCentered = false
+        initLocationManager()
+        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
+        params.topMargin = dpToPx(135) // Set the top margin to 100
+        recyclerView.layoutParams = params
+        recyclerView.requestLayout()
+        expandTextView.text = "exit"
+        expanded = true
+    }
+
+    private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
+        val geocoder = Geocoder(context, Locale.getDefault())
+
+        val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
+
+        if (!addressList.isNullOrEmpty()) {
+            val address = addressList[0]
+            val latitude = address.latitude
+            val longitude = address.longitude
+            return Pair(latitude, longitude)
+        }
+
+        return null // Return null if geocoding fails or no results are found
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    //////////////////////
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -417,109 +397,5 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         }
     }
 
-    /////////////////
-
-    fun updateLocation(latitude: Double, longitude: Double) {
-        lat = latitude
-        lng = longitude
-    }
-
-//    private fun sortRestaurants(restaurants: List<Business>): List<Business> {
-////        Log.d("XD:", "Sorting restaurants")
-////        return when (selectedSortTypeId) {
-////            0 -> restaurants.sortedByDescending { it.rating } // Sort by name
-////            1 -> restaurants.sortedByDescending { it.review_count } // Sort by descending rating
-////            2 -> restaurants.sortedBy { it.name } // Sort by descending rating
-////            3 -> restaurants.sortedBy { it.price?.length ?: Int.MAX_VALUE }
-////            4 -> restaurants.sortedBy { it.categories[0].title }
-////            5 -> restaurants.sortedByDescending { it.isOpenNow() }
-////            6 -> sortRestaurantsByDistance(restaurants, lat, lng)
-////            else -> restaurants
-////        }
-//    }
-
-    private fun Business.isOpenNow(): Boolean {
-        return this.business_hours.any { it.is_open_now }
-    }
-
-    private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
-        val geocoder = Geocoder(context, Locale.getDefault())
-
-        // Attempt to get the list of addresses based on the address string
-        val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
-
-        if (!addressList.isNullOrEmpty()) {
-            // If the list is not null or empty, get the first address
-            val address = addressList[0]
-            val latitude = address.latitude
-            val longitude = address.longitude
-            return Pair(latitude, longitude)
-        } else {
-            // Handle the case where the address could not be geocoded
-            Log.e("Geocoding", "Address not found or geocoding failed.")
-        }
-
-        return null // Return null if geocoding fails or no results are found
-    }
-
-    fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
-        // Radius of the Earth in meters
-        val R = 6371000.0
-
-        // Convert latitude and longitude from degrees to radians
-        val lat1Rad = Math.toRadians(lat1)
-        val lng1Rad = Math.toRadians(lng1)
-        val lat2Rad = Math.toRadians(lat2)
-        val lng2Rad = Math.toRadians(lng2)
-
-        // Difference in coordinates
-        val dLat = lat2Rad - lat1Rad
-        val dLng = lng2Rad - lng1Rad
-
-        // Haversine formula
-        val a = sin(dLat / 2).pow(2) + cos(lat1Rad) * cos(lat2Rad) * sin(dLng / 2).pow(2)
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-//        Log.d("XD:", "XD: current: (${lng1}, ${lng1}) vs. (${lng2}, ${lng2}) : restaurant")
-//        Log.d("XD:", "XD: distance: ${R*c}")
-
-        // Distance in meters
-        return R * c
-    }
-
-//    fun sortRestaurantsByDistance(
-//        restaurants: List<Business>,
-//        currentLat: Double,
-//        currentLng: Double
-//    ): List<Business> {
-//        return restaurants.sortedBy { business ->
-//            // Get LatLng for the business address
-//            val latLng = getLatLngFromAddress(requireContext(), "${business.location.address1}, ${business.location.city}, ${business.location.country}")
-//
-//            // If LatLng is null, assign a large value to ensure it's sorted last
-//            val distance = if (latLng != null) {
-//                calculateDistance(currentLat, currentLng, latLng.first, latLng.second)
-//            } else {
-//                Double.MAX_VALUE  // Business without valid coordinates will be last
-//            }
-//
-//            distance
-//        }
-//    }
-//
-//    private fun sortRestaurants() {
-//        Log.d("XD:", "Sorting restaurants 2")
-//        reviewViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
-//            if (restaurants.isNotEmpty()) {
-//                val sortedRestaurants = sortRestaurants(restaurants)
-//                reviewAdapter = DiscoverAdapter(sortedRestaurants, lat, lng)
-//                recyclerView.adapter = reviewAdapter
-//            } else {
-////                noMoreRestaurantsText.visibility = View.VISIBLE
-//                Log.d("XD:", "No restaurants available.")
-//            }
-//        }
-//        reviewViewModel.fetchRestaurants(lat, lng)
-//    }
 
 }
