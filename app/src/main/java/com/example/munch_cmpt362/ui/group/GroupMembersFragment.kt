@@ -158,7 +158,8 @@ class GroupMembersFragment: Fragment() {
 
         restaurantsListview.setOnItemClickListener { parent, view, position, id ->
             var restaurantId = myRestaurantsListAdapter.getItem(position)
-            myGroupFbViewModel.voteRestaurantName.value = restaurantId.toString()
+            // Put restaurant name instead of ID for Voting
+            myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
             val voteRestaurantDialog = VoteRestaurantDialog()
             voteRestaurantDialog.show(parentFragmentManager, "voting")
             // wait

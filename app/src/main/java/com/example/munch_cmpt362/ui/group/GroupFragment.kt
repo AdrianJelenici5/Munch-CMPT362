@@ -66,6 +66,8 @@ class GroupFragment: Fragment() {
                     requireActivity().runOnUiThread {
                         myGroupFbListAdapter.replace(groupFbList)
                         myGroupFbListAdapter.notifyDataSetChanged()
+                        // Refreshes layout
+                        myGroupListView.requestLayout()
                     }
                 }
                 .addOnFailureListener { exception ->
@@ -122,8 +124,10 @@ class GroupFragment: Fragment() {
                                 groupFb.listOfUserIds = list
                                 //myGroupFbViewModel.groupFb.postValue(groupFb)
                                 groupFbList.add(groupFb)
-                                myGroupFbListAdapter.replace(groupFbList)
-                                myGroupFbListAdapter.notifyDataSetChanged()
+                                requireActivity().runOnUiThread {
+                                    myGroupFbListAdapter.replace(groupFbList)
+                                    myGroupFbListAdapter.notifyDataSetChanged()
+                                }
                                 myGroupFbViewModel.groupAddedName.value = null
                             }
                             .addOnFailureListener { exception ->

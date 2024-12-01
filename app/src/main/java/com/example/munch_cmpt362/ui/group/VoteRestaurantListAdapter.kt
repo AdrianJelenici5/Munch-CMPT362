@@ -17,10 +17,10 @@ import kotlinx.coroutines.launch
 
 class VoteRestaurantListAdapter(private val context: Context, private var voteRestaurantList: List<String>): BaseAdapter() {
     // Cache to store restaurant by ID
-    private val restaurantCache = mutableMapOf<String, Business>()
+    val restaurantCache = mutableMapOf<String, Business>()
 
     // Restaurants being loaded
-    private val loadingRestaurants = mutableSetOf<String>()
+    val loadingRestaurants = mutableSetOf<String>()
 
     override  fun getItem(position: Int): Any{
         return voteRestaurantList.get(position)
