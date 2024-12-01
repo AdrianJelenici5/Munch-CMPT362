@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -24,19 +25,6 @@ class GroupMembersFragment: Fragment() {
 
     private lateinit var addGroupMemberButton: Button
     private lateinit var myGroupMemberListView: ListView
-
-    //private lateinit var groupMemberList: ArrayList<User>
-    //lateinit var myGroupMemberListAdapter: GroupMemberListAdapter
-//    private lateinit var groupDatabase: GroupDatabase
-//    private lateinit var groupDatabaseDao: GroupDatabaseDao
-//    lateinit var groupViewModel: GroupViewModel
-//    private lateinit var groupRepository: GroupRepository
-//    private lateinit var groupViewModelFactory: GroupViewModelFactory
-//
-//    private var STUB_USER_ID = 1L
-    //private var STUB_GROUP_ID = 1L
-
-    //private lateinit var allUserGroupMembers: List<User>
 
     lateinit var myGroupFbMemberListAdapter: GroupFbMemberListAdapter
     private lateinit var groupFbMemberList: ArrayList<Users>
@@ -60,21 +48,6 @@ class GroupMembersFragment: Fragment() {
 
         topRestaurantTextview = view.findViewById(R.id.Most_voted)
         restaurantsListview = view.findViewById(R.id.Voting_listview)
-
-        //groupMemberList = ArrayList()
-        //allUserGroupMembers = ArrayList()
-        //myGroupMemberListAdapter = GroupMemberListAdapter(requireActivity(), groupMemberList)
-        //myGroupMemberListView.adapter = myGroupMemberListAdapter
-
-//        groupDatabase = GroupDatabase.getInstance(requireActivity())
-//        groupDatabaseDao = groupDatabase.groupDatabaseDao
-//
-//        groupRepository = GroupRepository(groupDatabaseDao, STUB_USER_ID)
-//        groupViewModelFactory = GroupViewModelFactory(groupRepository)
-//        groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(
-//            GroupViewModel::class.java)
-
-        //updateMembers()
 
 
         groupFbMemberList = ArrayList()
@@ -106,39 +79,72 @@ class GroupMembersFragment: Fragment() {
                     var groupId = myGroupFbViewModel.clickedGroup.value!!.groupId
                     val database = Firebase.firestore
                     CoroutineScope(IO).launch {
-                        database.collection("group").whereEqualTo("groupId", groupId).get()
-                            .addOnSuccessListener { documents ->
-                                // There should only be one document
-                                for (document in documents) {
-                                    Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
-                                    var listUsers = document.data["listOfUserIds"] as MutableList<String>
-                                    listUsers.add(addedUser!!)
-                                    // add user restaurant preferences too
-                                    val userPrefRef = Firebase.firestore.collection("user-preference").document(addedUser).get()
-                                        .addOnSuccessListener { userPref ->
-                                            val listRestaurant: MutableList<String> = ArrayList()
-                                            val rest1 = userPref.data!!["restaurant_1"].toString()
-                                            val rest2 = userPref.data!!["restaurant_2"].toString()
-                                            val rest3 = userPref.data!!["restaurant_3"].toString()
-                                            if (rest1 != "null") {
-                                                listRestaurant.add(rest1)
-                                            }
-                                            if (rest2 != "null") {
-                                                listRestaurant.add(rest2)
-                                            }
-                                            if (rest3 != "null") {
-                                                listRestaurant.add(rest3)
-                                            }
-                                            var oldGroupRestaurant = document.data["listOfRestaurants"] as MutableList<String>
-                                            // get distinct items from both list
-                                            var newGroupRestaurant = oldGroupRestaurant.union(listRestaurant).toMutableList()
-                                            database.collection("group").document(groupId)
-                                                .update("listOfRestaurants", newGroupRestaurant)
-                                        }
-                                    database.collection("group").document(groupId)
-                                        .update("listOfUserIds", listUsers)
+                        database.collection("users").document(addedUser!!).get()
+                            .addOnSuccessListener { checkUser ->
+                                // No user id matched in database
+                                if (!checkUser.exists()) {
+                                    requireActivity().runOnUiThread {
+                                        Toast.makeText(
+                                            activity,
+                                            "Sorry, user not found",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                    return@addOnSuccessListener
                                 }
-                                updateMembers()
+
+                                database.collection("group").whereEqualTo("groupId", groupId).get()
+                                    .addOnSuccessListener { documents ->
+                                        // There should only be one document
+                                        for (document in documents) {
+                                            Log.d(
+                                                "TAG",
+                                                "GABRIEL ${document.id} => ${document.data}"
+                                            )
+                                            var listUsers =
+                                                document.data["listOfUserIds"] as MutableList<String>
+                                            listUsers.add(addedUser!!)
+                                            // add user restaurant preferences too
+                                            val userPrefRef =
+                                                Firebase.firestore.collection("user-preference")
+                                                    .document(addedUser).get()
+                                                    .addOnSuccessListener { userPref ->
+                                                        val listRestaurant: MutableList<String> =
+                                                            ArrayList()
+                                                        val rest1 =
+                                                            userPref.data!!["restaurant_1"].toString()
+                                                        val rest2 =
+                                                            userPref.data!!["restaurant_2"].toString()
+                                                        val rest3 =
+                                                            userPref.data!!["restaurant_3"].toString()
+                                                        if (rest1 != "null") {
+                                                            listRestaurant.add(rest1)
+                                                        }
+                                                        if (rest2 != "null") {
+                                                            listRestaurant.add(rest2)
+                                                        }
+                                                        if (rest3 != "null") {
+                                                            listRestaurant.add(rest3)
+                                                        }
+                                                        var oldGroupRestaurant =
+                                                            document.data["listOfRestaurants"] as MutableList<String>
+                                                        // get distinct items from both list
+                                                        var newGroupRestaurant =
+                                                            oldGroupRestaurant.union(listRestaurant)
+                                                                .toMutableList()
+                                                        database.collection("group")
+                                                            .document(groupId)
+                                                            .update(
+                                                                "listOfRestaurants",
+                                                                newGroupRestaurant
+                                                            )
+                                                        database.collection("group")
+                                                            .document(groupId)
+                                                            .update("listOfUserIds", listUsers)
+                                                        updateMembers()
+                                                    }
+                                        }
+                                    }
                             }
                     }
                 }
@@ -175,16 +181,6 @@ class GroupMembersFragment: Fragment() {
         return view
     }
 
-//    fun updateMembers(){
-//        CoroutineScope(IO).launch{
-//            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(groupViewModel.clickedGroup.value!!.groupID)
-//            println("THIS IS GROUP: $allUserGroupMembers")
-//            activity?.runOnUiThread(){
-//                myGroupMemberListAdapter.replace(allUserGroupMembers)
-//                myGroupMemberListAdapter.notifyDataSetChanged()
-//            }
-//        }
-//    }
     fun updateMembers() {
         CoroutineScope(IO).launch {
             // get members in the group
