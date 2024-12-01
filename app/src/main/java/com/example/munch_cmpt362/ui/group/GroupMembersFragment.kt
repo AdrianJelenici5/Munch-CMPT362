@@ -1,5 +1,6 @@
 package com.example.munch_cmpt362.ui.group
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,13 +13,16 @@ import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.data.remote.api.ApiHelper
 import com.example.munch_cmpt362.ui.auth.AuthViewModel
 import com.example.munch_cmpt362.ui.group.fb.GroupFbViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class GroupMembersFragment: Fragment() {
@@ -87,7 +91,7 @@ class GroupMembersFragment: Fragment() {
                                         Toast.makeText(
                                             activity,
                                             "Sorry, user not found",
-                                            Toast.LENGTH_LONG
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                     return@addOnSuccessListener
@@ -194,7 +198,6 @@ class GroupMembersFragment: Fragment() {
                         val listUsers = document.data["listOfUserIds"] as MutableList<String>
                         val listRestaurants = document.data["listOfRestaurants"] as MutableList<String>
 
-                        // update restaurant list
                         myRestaurantsListAdapter.replace(listRestaurants)
                         myRestaurantsListAdapter.notifyDataSetChanged()
 
