@@ -1,6 +1,7 @@
 package com.example.munch_cmpt362.ui.discover
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.location.Address
 import android.location.Geocoder
@@ -15,12 +16,15 @@ import android.view.ViewGroup
 import android.widget.SearchView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.data.local.database.MunchDatabase
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -35,12 +39,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 
 // TODO:
-//  2) Make clicking x not go into expanded view
-//  3) Make expanded view look better
-//  5) Add a view model for horizantal changes
 //  6) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
-//  7) Determine why cant scroll to bottom of recyler view
 
 
 @AndroidEntryPoint
@@ -121,13 +121,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                 expandList()
             }
             else {
-                val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = dpToPx(475) // Set the top margin to 100
-                recyclerView.layoutParams = params
-                recyclerView.requestLayout()
-                expandTextView.text = "expand list"
-                searchView.clearFocus()
-                expanded = false
+                shrinkList()
                 if (isFocused) {
                     discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
                         updateRecyclerViewWithRestaurantList(restaurants)
@@ -145,6 +139,15 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         // SEARCH VIEW FUNCTIONALITY //
         ///////////////////////////////
 
+        val closeButton = searchView.findViewById<View>(androidx.appcompat.R.id.search_close_btn)
+
+        closeButton?.setOnClickListener {
+            searchView.setQuery("", false)
+            if (expanded == false) {
+                shrinkList()
+            }
+        }
+
         searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 val searchQuery = searchView.query.toString()
@@ -152,6 +155,7 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
                     updateListOnQueryChange(searchQuery)
                 }
                 else {
+                    Log.d("searchQuery:", "searchQuery: $searchQuery")
                     discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
                         updateRecyclerViewWithRestaurantList(restaurants)
                     }
@@ -314,18 +318,12 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         }
 
         val latLng = marker.position
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)  // Zoom level of 15
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 12f)
         mMap.animateCamera(cameraUpdate)
         marker.showInfoWindow()
 
-        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-        params.topMargin = dpToPx(475)
-        recyclerView.layoutParams = params
-        recyclerView.requestLayout()
-        expandTextView.text = "expand list"
-        expanded = false
-
-        searchView.clearFocus()
+        shrinkList()
+        // searchView.setQuery("", false)
 
         return true
     }
@@ -362,10 +360,13 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     private fun updateListOnQueryChange(searchQuery: String) {
         labelTextView.text = "    Search Results like '$searchQuery':"
+        Log.d("searchQuery:", "searchQuery: $searchQuery")
         discoverViewModel.restaurants.observe(viewLifecycleOwner) { restaurants ->
             if (searchQuery.isEmpty()) {
-                updateRecyclerViewWithRestaurantList(restaurants)
+                Log.d("searchQuery:", "searchQuery is null: $searchQuery")
                 labelTextView.text = "    All restaurants in your area:"
+                updateRecyclerViewWithRestaurantList(restaurants)
+                //labelTextView.text = "    All restaurants in your area:"
             } else {
                 val matchingRestaurants = findSimilarRestaurants(restaurants, searchQuery)
                 if (matchingRestaurants != null) {
@@ -399,6 +400,35 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         recyclerView.requestLayout()
         expandTextView.text = "exit"
         expanded = true
+
+        val params2 = searchView.layoutParams as ConstraintLayout.LayoutParams
+        params2.marginStart = dpToPx(0)
+        params2.marginEnd = dpToPx(0)
+        searchView.layoutParams = params2
+        searchView.requestLayout()
+
+        val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as? SupportMapFragment
+        mapFragment?.view?.visibility = View.GONE
+        //mapFragment?.getView()?.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+    }
+
+    private fun shrinkList() {
+        val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
+        params.topMargin = dpToPx(475)
+        recyclerView.layoutParams = params
+        recyclerView.requestLayout()
+        expandTextView.text = "expand"
+        expanded = false
+        searchView.clearFocus()
+
+        val params2 = searchView.layoutParams as ConstraintLayout.LayoutParams
+        params2.marginStart = dpToPx(20)
+        params2.marginEnd = dpToPx(20)
+        searchView.layoutParams = params2
+        searchView.requestLayout()
+
+        val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as? SupportMapFragment
+        mapFragment?.view?.visibility = View.VISIBLE
     }
 
     private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
@@ -427,6 +457,18 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
         if (::locationManager.isInitialized) {
             locationManager.removeUpdates(this)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Lock orientation to portrait (example)
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Restore to the system default (sensor-based orientation)
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
 

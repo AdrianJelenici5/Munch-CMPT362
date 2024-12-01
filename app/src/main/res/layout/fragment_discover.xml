@@ -40,6 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="475dp"
+            android:layout_marginBottom="65dp"
             android:background="@android:color/white"
             app:layout_constraintBottom_toBottomOf="parent" />
 
@@ -51,7 +52,7 @@
             android:background="@drawable/top_bottom_border"
             android:gravity="center"
             android:paddingBottom="3dp"
-            android:text="expand list"
+            android:text="expand"
             android:textColor="@android:color/black"
             android:textSize="16sp"
             app:layout_constraintBottom_toTopOf="@id/labelTextView" />
