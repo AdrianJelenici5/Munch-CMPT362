@@ -13,6 +13,8 @@ import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.data.remote.api.ApiHelper
@@ -36,7 +38,7 @@ class GroupMembersFragment: Fragment() {
     private lateinit var myGroupFbViewModel: GroupFbViewModel
 
     private lateinit var topRestaurantTextview: TextView
-    private lateinit var restaurantsListview: ListView
+    private lateinit var restaurantsListview: RecyclerView
     lateinit var myRestaurantsListAdapter: VoteRestaurantListAdapter
     private lateinit var voteRestaurantList: ArrayList<String>
 
@@ -52,6 +54,7 @@ class GroupMembersFragment: Fragment() {
 
         topRestaurantTextview = view.findViewById(R.id.Most_voted)
         restaurantsListview = view.findViewById(R.id.Voting_listview)
+        restaurantsListview.layoutManager = LinearLayoutManager(context)
 
 
         groupFbMemberList = ArrayList()
@@ -62,7 +65,32 @@ class GroupMembersFragment: Fragment() {
         myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
         voteRestaurantList = ArrayList()
         myRestaurantsListAdapter = VoteRestaurantListAdapter(requireActivity(), voteRestaurantList,
-            myGroupFbViewModel.lat.value!!, myGroupFbViewModel.lng.value!!)
+            myGroupFbViewModel.lat.value!!, myGroupFbViewModel.lng.value!!) {
+                restaurantId ->
+                // Put restaurant name instead of ID for Voting
+                myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
+                val voteRestaurantDialog = VoteRestaurantDialog()
+                voteRestaurantDialog.show(parentFragmentManager, "voting")
+                // wait
+                parentFragmentManager.executePendingTransactions()
+                voteRestaurantDialog.dialog?.setOnDismissListener{
+                    // voted yes to restaurant
+                    if(myGroupFbViewModel.votedYes.value == true){
+                        // check if any database records from same group, user, restaurant
+                        myGroupFbViewModel.votedYes.value = false
+                        votedYes()
+                    }
+
+                    // voted no to restaurant
+                    if(myGroupFbViewModel.votedNo.value == true){
+                        myGroupFbViewModel.votedNo.value = false
+                        votedNo()
+                    }
+
+                    (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
+                }
+        }
+
         restaurantsListview.adapter = myRestaurantsListAdapter
 
         updateMembers()
@@ -157,32 +185,32 @@ class GroupMembersFragment: Fragment() {
             }
         }
 
-        restaurantsListview.setOnItemClickListener { parent, view, position, id ->
-            var restaurantId = myRestaurantsListAdapter.getItem(position)
-            // Put restaurant name instead of ID for Voting
-            myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
-            val voteRestaurantDialog = VoteRestaurantDialog()
-            voteRestaurantDialog.show(parentFragmentManager, "voting")
-            // wait
-            parentFragmentManager.executePendingTransactions()
-            voteRestaurantDialog.dialog?.setOnDismissListener{
-                // voted yes to restaurant
-                if(myGroupFbViewModel.votedYes.value == true){
-                    // check if any database records from same group, user, restaurant
-                    myGroupFbViewModel.votedYes.value = false
-                    votedYes()
-                }
-
-                // voted no to restaurant
-                if(myGroupFbViewModel.votedNo.value == true){
-                    myGroupFbViewModel.votedNo.value = false
-                    votedNo()
-                }
-
-                (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
-            }
-
-        }
+//        restaurantsListview.setOnItemClickListener { parent, view, position, id ->
+//            var restaurantId = myRestaurantsListAdapter.getItem(position)
+//            // Put restaurant name instead of ID for Voting
+//            myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
+//            val voteRestaurantDialog = VoteRestaurantDialog()
+//            voteRestaurantDialog.show(parentFragmentManager, "voting")
+//            // wait
+//            parentFragmentManager.executePendingTransactions()
+//            voteRestaurantDialog.dialog?.setOnDismissListener{
+//                // voted yes to restaurant
+//                if(myGroupFbViewModel.votedYes.value == true){
+//                    // check if any database records from same group, user, restaurant
+//                    myGroupFbViewModel.votedYes.value = false
+//                    votedYes()
+//                }
+//
+//                // voted no to restaurant
+//                if(myGroupFbViewModel.votedNo.value == true){
+//                    myGroupFbViewModel.votedNo.value = false
+//                    votedNo()
+//                }
+//
+//                (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
+//            }
+//
+//        }
 
         return view
     }

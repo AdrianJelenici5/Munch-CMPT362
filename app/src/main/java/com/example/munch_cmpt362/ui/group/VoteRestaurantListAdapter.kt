@@ -5,15 +5,22 @@ import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView.OnItemClickListener
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.data.remote.api.ApiHelper
+import com.example.munch_cmpt362.ui.group.fb.GroupFbViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
@@ -28,58 +35,41 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class VoteRestaurantListAdapter(private val context: Context, private var voteRestaurantList: List<String>,
-                                private val currentLat: Double, private val currentLng: Double): BaseAdapter() {
+class VoteRestaurantListAdapter(private val context: Context, private var voteRestaurantList: List<String>, private val currentLat: Double,
+                                private val currentLng: Double, private val itemClickListener: (String) -> Unit)
+                                :RecyclerView.Adapter<VoteRestaurantListAdapter.RestaurantViewHolder>() {
     // Cache to store restaurant by ID
     val restaurantCache = mutableMapOf<String, Business>()
 
     // Restaurants being loaded
     val loadingRestaurants = mutableSetOf<String>()
 
-    override  fun getItem(position: Int): Any{
-        return voteRestaurantList.get(position)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RestaurantViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_restaurant_review, parent, false)
+        Log.d("TAG", "Fetched restaurants: $voteRestaurantList")
+        return RestaurantViewHolder(view, currentLat, currentLng)
     }
 
-    override fun getItemId(position: Int): Long{
-        return position.toLong()
-    }
+    override fun onBindViewHolder(holder: RestaurantViewHolder, position: Int) {
+        val restaurant = voteRestaurantList[position]
+        val cachedRestaurant = restaurantCache[restaurant]
 
-    override fun getCount(): Int{
-        return voteRestaurantList.size
-    }
-
-    override fun getView(position: Int, view: View?, viewGroup: ViewGroup?): View {
-        val view = View.inflate(context, R.layout.item_restaurant_review, null)
-        val nameTextView: TextView = view.findViewById(R.id.tvName)
-        val restaurantInfoTextView: TextView = view.findViewById(R.id.restaurantInfo)
-        val ratingTextView: TextView = view.findViewById(R.id.tvReview)
-        val imageView: ImageView = view.findViewById(R.id.ivImage)
-        val openOrClosed: ImageView = view.findViewById(R.id.openOrClosed)
-        val restaurantType: TextView = view.findViewById(R.id.restaurantType)
-        //val textViewId = view.findViewById<TextView>(R.id.group_id)
-        //val textViewName = view.findViewById<TextView>(R.id.group_name)
-        val restaurantId = voteRestaurantList.get(position)
-        //textViewId.text = restaurantId
-        //textViewName.text = voteRestaurantList.get(position)
-
-        // Check if the restaurant details are already cached
-        val cachedRestaurant = restaurantCache[restaurantId]
         if (cachedRestaurant != null) {
             // If cached, set the name directly
             //textViewName.text = cachedRestaurant.name
             val price = if (cachedRestaurant.price != null) "(${cachedRestaurant.price}) " else ""
-            nameTextView.text = "${cachedRestaurant.name} ${price}"
+            holder.nameTextView.text = "${cachedRestaurant.name} ${price}"
             if (cachedRestaurant.business_hours != null) {
                 for (hours in cachedRestaurant.business_hours) {
                     if (hours.is_open_now) {
-                        openOrClosed.setImageResource(R.drawable.green_dot)
+                        holder.openOrClosed.setImageResource(R.drawable.green_dot)
                     } else {
-                        openOrClosed.setImageResource(R.drawable.red_dot)
+                        holder.openOrClosed.setImageResource(R.drawable.red_dot)
                     }
                 }
             }
 
-            restaurantType.text = cachedRestaurant.categories[0].title
+            holder.restaurantType.text = cachedRestaurant.categories[0].title
 
             val address = cachedRestaurant.location.address1
             val city = cachedRestaurant.location.city
@@ -96,17 +86,17 @@ class VoteRestaurantListAdapter(private val context: Context, private var voteRe
                     // Log.d("XD:", "XD: distance/1000: ${dist}")
                     string_dist = String.format("%.2f", dist)
                     // Log.d("XD:", "XD: distance formatted: ${string_dist}")
-                    restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+                    holder.restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
                 }
             }
 
             // Log.d("XD:", "XD: distance outside: ${string_dist}")
             // If I dont include this, some restaurants dont get displayed in the list:
-            restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+            holder.restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
 
-            ratingTextView.text = "Rating: ${cachedRestaurant.rating} / 5  (${cachedRestaurant.review_count} User Reviews)"
+            holder.ratingTextView.text = "Rating: ${cachedRestaurant.rating} / 5  (${cachedRestaurant.review_count} User Reviews)"
 
-            Glide.with(view.context).load(cachedRestaurant.image_url).into(imageView)
+            Glide.with(holder.itemView.context).load(cachedRestaurant.image_url).into(holder.imageView)
             //locationTextView.text = restaurant.location
 
             println("GABRIEL WHY NOT WORKING")
@@ -117,123 +107,95 @@ class VoteRestaurantListAdapter(private val context: Context, private var voteRe
                 "RestaurantDetails",
                 "Address: ${cachedRestaurant.location.address1}, ${cachedRestaurant.location.city}"
             )
-            }
+        }
         else {
             // If not cached, check if it's already being loaded
-            if (!loadingRestaurants.contains(restaurantId)) {
+            if (!loadingRestaurants.contains(restaurant)) {
                 // Mark the restaurant as being loaded
-                loadingRestaurants.add(restaurantId)
+                loadingRestaurants.add(restaurant)
 
                 // Fetch restaurant details from API
                 CoroutineScope(IO).launch {
-                    ApiHelper.getRestaurantById(restaurantId) { restaurant ->
-                        if (restaurant != null) {
+                    ApiHelper.getRestaurantById(restaurant) { restaurantFetch ->
+                        if (restaurantFetch != null) {
                             // Cache the fetched restaurant details
-                            restaurantCache[restaurantId] = restaurant
+                            restaurantCache[restaurant] = restaurantFetch
 
                             // Update the UI with the restaurant details
                             (context as Activity).runOnUiThread {
                                 //textViewName.text = restaurant.name
-                                val price = if (restaurant.price != null) "(${restaurant.price}) " else ""
-                                nameTextView.text = "${restaurant.name} ${price}"
-                                if (restaurant.business_hours != null) {
-                                    for (hours in restaurant.business_hours) {
+                                val price = if (restaurantFetch.price != null) "(${restaurantFetch.price}) " else ""
+                                holder.nameTextView.text = "${restaurantFetch.name} ${price}"
+                                if (restaurantFetch.business_hours != null) {
+                                    for (hours in restaurantFetch.business_hours) {
                                         if (hours.is_open_now) {
-                                            openOrClosed.setImageResource(R.drawable.green_dot)
+                                            holder.openOrClosed.setImageResource(R.drawable.green_dot)
                                         } else {
-                                            openOrClosed.setImageResource(R.drawable.red_dot)
+                                            holder.openOrClosed.setImageResource(R.drawable.red_dot)
                                         }
                                     }
                                 }
 
-                                restaurantType.text = restaurant.categories[0].title
+                                holder.restaurantType.text = restaurantFetch.categories[0].title
 
-                                val address = restaurant.location.address1
-                                val city = restaurant.location.city
+                                val address = restaurantFetch.location.address1
+                                val city = restaurantFetch.location.city
 
                                 var string_dist = "0.0"
                                 GlobalScope.launch(Dispatchers.Main) {
                                     val latLng = getLatLngFromAddress(context,
-                                        "${restaurant.location.address1}, ${restaurant.location.city}, ${restaurant.location.country}")
+                                        "${restaurantFetch.location.address1}, ${restaurantFetch.location.city}, ${restaurantFetch.location.country}")
                                     latLng?.let {
                                         // Log.d("XD:", "XD: current: (${currentLat}, ${currentLng}) vs. (${it.first}, ${it.second}) : restaurant")
-                                        var dist = calculateDistance(0.0, 0.0, it.first, it.second)
+                                        var dist = calculateDistance(currentLat, currentLng, it.first, it.second)
                                         // Log.d("XD:", "XD: distance: ${dist}")
                                         dist = dist/1000
                                         // Log.d("XD:", "XD: distance/1000: ${dist}")
                                         string_dist = String.format("%.2f", dist)
                                         // Log.d("XD:", "XD: distance formatted: ${string_dist}")
-                                        restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+                                        holder.restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
                                     }
                                 }
 
                                 // Log.d("XD:", "XD: distance outside: ${string_dist}")
                                 // If I dont include this, some restaurants dont get displayed in the list:
-                                restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+                                holder.restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
 
-                                ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
+                                holder.ratingTextView.text = "Rating: ${restaurantFetch.rating} / 5  (${restaurantFetch.review_count} User Reviews)"
 
-                                Glide.with(view.context).load(restaurant.image_url).into(imageView)
+                                Glide.with(holder.itemView.context).load(restaurantFetch.image_url).into(holder.imageView)
                                 //locationTextView.text = restaurant.location
 
                                 println("GABRIEL WHY NOT WORKING")
                                 // Successfully retrieved restaurant details, handle them here
-                                Log.d("RestaurantDetails", "Name: ${restaurant.name}")
-                                Log.d("RestaurantDetails", "Rating: ${restaurant.rating}")
+                                Log.d("RestaurantDetails", "Name: ${restaurantFetch.name}")
+                                Log.d("RestaurantDetails", "Rating: ${restaurantFetch.rating}")
                                 Log.d(
                                     "RestaurantDetails",
-                                    "Address: ${restaurant.location.address1}, ${restaurant.location.city}"
+                                    "Address: ${restaurantFetch.location.address1}, ${restaurantFetch.location.city}"
                                 )
-                                notifyDataSetChanged()
                             }
                         }
                         else {
                             // Handle failure, set fallback text
                             (context as Activity).runOnUiThread {
                                 //textViewName.text = "Failed to retrieve restaurant details"
-                                nameTextView.text = "Failed to retrieve restaurant details"
+                                holder.nameTextView.text = "Failed to retrieve restaurant details"
                             }
                         }
 
                         // After loading, remove it from the loading set
-                        loadingRestaurants.remove(restaurantId)
+                        loadingRestaurants.remove(restaurant)
                     }
                 }
             }
             else {
                 // If it's still being loaded, show a placeholder or loading text
                 //textViewName.text = "Loading..."
-                nameTextView.text = "Loading..."
+                holder.nameTextView.text = "Loading..."
             }
         }
-//        CoroutineScope(IO).launch{
-//            // delay to send request slowly
-//            delay(333L)
-//            ApiHelper.getRestaurantById(voteRestaurantList.get(position)) { restaurant ->
-//                if (restaurant != null) {
-//                    (context as Activity).runOnUiThread{
-//                        textViewName.text = restaurant.name
-//                        // Successfully retrieved restaurant details, handle them here
-//                        Log.d("RestaurantDetails", "Name: ${restaurant.name}")
-//                        Log.d("RestaurantDetails", "Rating: ${restaurant.rating}")
-//                        Log.d(
-//                            "RestaurantDetails",
-//                            "Address: ${restaurant.location.address1}, ${restaurant.location.city}"
-//                        )
-//                    }
-//                } else {
-//                    Log.e("RestaurantDetails", "Failed to retrieve restaurant details")
-//                    (context as Activity).runOnUiThread{
-//                        textViewName.text = "Failed to retrieve restaurant details"
-//                    }
-//                }
-//            }
-//        }
-        return view
-    }
 
-    fun replace(newList: List<String>){
-        voteRestaurantList = newList
     }
 
     private suspend fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
@@ -275,6 +237,204 @@ class VoteRestaurantListAdapter(private val context: Context, private var voteRe
 
         // Distance in meters
         return R * c
+    }
+
+    override fun getItemCount(): Int = voteRestaurantList.size
+
+    // ViewHolder to hold the views for each item in the RecyclerView
+    inner class RestaurantViewHolder(itemView: View, private val currentLat: Double, private val currentLng: Double) : RecyclerView.ViewHolder(itemView) {
+        val nameTextView: TextView = itemView.findViewById(R.id.tvName)
+        val restaurantInfoTextView: TextView = itemView.findViewById(R.id.restaurantInfo)
+        val ratingTextView: TextView = itemView.findViewById(R.id.tvReview)
+        val imageView: ImageView = itemView.findViewById(R.id.ivImage)
+        val openOrClosed: ImageView = itemView.findViewById(R.id.openOrClosed)
+        val restaurantType: TextView = itemView.findViewById(R.id.restaurantType)
+
+        init {
+            // Set the click listener on the item view
+            itemView.setOnClickListener {
+                val restaurantId = voteRestaurantList[adapterPosition]
+                itemClickListener(restaurantId) // Pass the restaurant ID to the listener
+            }
+        }
+    }
+
+
+//    override fun getItem(position: Int): Any{
+//        return voteRestaurantList.get(position)
+//    }
+
+    override fun getItemId(position: Int): Long{
+        return position.toLong()
+    }
+
+//    override fun getCount(): Int{
+//        return voteRestaurantList.size
+//    }
+
+//    override fun getView(position: Int, view: View?, viewGroup: ViewGroup?): View {
+//        val view = View.inflate(context, R.layout.item_restaurant_review, null)
+//        val nameTextView: TextView = view.findViewById(R.id.tvName)
+//        val restaurantInfoTextView: TextView = view.findViewById(R.id.restaurantInfo)
+//        val ratingTextView: TextView = view.findViewById(R.id.tvReview)
+//        val imageView: ImageView = view.findViewById(R.id.ivImage)
+//        val openOrClosed: ImageView = view.findViewById(R.id.openOrClosed)
+//        val restaurantType: TextView = view.findViewById(R.id.restaurantType)
+//        //val textViewId = view.findViewById<TextView>(R.id.group_id)
+//        //val textViewName = view.findViewById<TextView>(R.id.group_name)
+//        val restaurantId = voteRestaurantList.get(position)
+//        //textViewId.text = restaurantId
+//        //textViewName.text = voteRestaurantList.get(position)
+//
+//        // Check if the restaurant details are already cached
+//        val cachedRestaurant = restaurantCache[restaurantId]
+//        if (cachedRestaurant != null) {
+//            // If cached, set the name directly
+//            //textViewName.text = cachedRestaurant.name
+//            val price = if (cachedRestaurant.price != null) "(${cachedRestaurant.price}) " else ""
+//            nameTextView.text = "${cachedRestaurant.name} ${price}"
+//            if (cachedRestaurant.business_hours != null) {
+//                for (hours in cachedRestaurant.business_hours) {
+//                    if (hours.is_open_now) {
+//                        openOrClosed.setImageResource(R.drawable.green_dot)
+//                    } else {
+//                        openOrClosed.setImageResource(R.drawable.red_dot)
+//                    }
+//                }
+//            }
+//
+//            restaurantType.text = cachedRestaurant.categories[0].title
+//
+//            val address = cachedRestaurant.location.address1
+//            val city = cachedRestaurant.location.city
+//
+//            var string_dist = "0.0"
+//            GlobalScope.launch(Dispatchers.Main) {
+//                val latLng = getLatLngFromAddress(context,
+//                    "${cachedRestaurant.location.address1}, ${cachedRestaurant.location.city}, ${cachedRestaurant.location.country}")
+//                latLng?.let {
+//                    // Log.d("XD:", "XD: current: (${currentLat}, ${currentLng}) vs. (${it.first}, ${it.second}) : restaurant")
+//                    var dist = calculateDistance(currentLat, currentLng, it.first, it.second)
+//                    // Log.d("XD:", "XD: distance: ${dist}")
+//                    dist = dist/1000
+//                    // Log.d("XD:", "XD: distance/1000: ${dist}")
+//                    string_dist = String.format("%.2f", dist)
+//                    // Log.d("XD:", "XD: distance formatted: ${string_dist}")
+//                    restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+//                }
+//            }
+//
+//            // Log.d("XD:", "XD: distance outside: ${string_dist}")
+//            // If I dont include this, some restaurants dont get displayed in the list:
+//            restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+//
+//            ratingTextView.text = "Rating: ${cachedRestaurant.rating} / 5  (${cachedRestaurant.review_count} User Reviews)"
+//
+//            Glide.with(view.context).load(cachedRestaurant.image_url).into(imageView)
+//            //locationTextView.text = restaurant.location
+//
+//            println("GABRIEL WHY NOT WORKING")
+//            // Successfully retrieved restaurant details, handle them here
+//            Log.d("RestaurantDetails", "Name: ${cachedRestaurant.name}")
+//            Log.d("RestaurantDetails", "Rating: ${cachedRestaurant.rating}")
+//            Log.d(
+//                "RestaurantDetails",
+//                "Address: ${cachedRestaurant.location.address1}, ${cachedRestaurant.location.city}"
+//            )
+//            }
+//        else {
+//            // If not cached, check if it's already being loaded
+//            if (!loadingRestaurants.contains(restaurantId)) {
+//                // Mark the restaurant as being loaded
+//                loadingRestaurants.add(restaurantId)
+//
+//                // Fetch restaurant details from API
+//                CoroutineScope(IO).launch {
+//                    ApiHelper.getRestaurantById(restaurantId) { restaurant ->
+//                        if (restaurant != null) {
+//                            // Cache the fetched restaurant details
+//                            restaurantCache[restaurantId] = restaurant
+//
+//                            // Update the UI with the restaurant details
+//                            (context as Activity).runOnUiThread {
+//                                //textViewName.text = restaurant.name
+//                                val price = if (restaurant.price != null) "(${restaurant.price}) " else ""
+//                                nameTextView.text = "${restaurant.name} ${price}"
+//                                if (restaurant.business_hours != null) {
+//                                    for (hours in restaurant.business_hours) {
+//                                        if (hours.is_open_now) {
+//                                            openOrClosed.setImageResource(R.drawable.green_dot)
+//                                        } else {
+//                                            openOrClosed.setImageResource(R.drawable.red_dot)
+//                                        }
+//                                    }
+//                                }
+//
+//                                restaurantType.text = restaurant.categories[0].title
+//
+//                                val address = restaurant.location.address1
+//                                val city = restaurant.location.city
+//
+//                                var string_dist = "0.0"
+//                                GlobalScope.launch(Dispatchers.Main) {
+//                                    val latLng = getLatLngFromAddress(context,
+//                                        "${restaurant.location.address1}, ${restaurant.location.city}, ${restaurant.location.country}")
+//                                    latLng?.let {
+//                                        // Log.d("XD:", "XD: current: (${currentLat}, ${currentLng}) vs. (${it.first}, ${it.second}) : restaurant")
+//                                        var dist = calculateDistance(0.0, 0.0, it.first, it.second)
+//                                        // Log.d("XD:", "XD: distance: ${dist}")
+//                                        dist = dist/1000
+//                                        // Log.d("XD:", "XD: distance/1000: ${dist}")
+//                                        string_dist = String.format("%.2f", dist)
+//                                        // Log.d("XD:", "XD: distance formatted: ${string_dist}")
+//                                        restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+//                                    }
+//                                }
+//
+//                                // Log.d("XD:", "XD: distance outside: ${string_dist}")
+//                                // If I dont include this, some restaurants dont get displayed in the list:
+//                                restaurantInfoTextView.text = "${string_dist}km | ${address}, ${city}"
+//
+//                                ratingTextView.text = "Rating: ${restaurant.rating} / 5  (${restaurant.review_count} User Reviews)"
+//
+//                                Glide.with(view.context).load(restaurant.image_url).into(imageView)
+//                                //locationTextView.text = restaurant.location
+//
+//                                println("GABRIEL WHY NOT WORKING")
+//                                // Successfully retrieved restaurant details, handle them here
+//                                Log.d("RestaurantDetails", "Name: ${restaurant.name}")
+//                                Log.d("RestaurantDetails", "Rating: ${restaurant.rating}")
+//                                Log.d(
+//                                    "RestaurantDetails",
+//                                    "Address: ${restaurant.location.address1}, ${restaurant.location.city}"
+//                                )
+//                                notifyDataSetChanged()
+//                            }
+//                        }
+//                        else {
+//                            // Handle failure, set fallback text
+//                            (context as Activity).runOnUiThread {
+//                                //textViewName.text = "Failed to retrieve restaurant details"
+//                                nameTextView.text = "Failed to retrieve restaurant details"
+//                            }
+//                        }
+//
+//                        // After loading, remove it from the loading set
+//                        loadingRestaurants.remove(restaurantId)
+//                    }
+//                }
+//            }
+//            else {
+//                // If it's still being loaded, show a placeholder or loading text
+//                //textViewName.text = "Loading..."
+//                nameTextView.text = "Loading..."
+//            }
+//        }
+//        return view
+//    }
+
+    fun replace(newList: List<String>){
+        voteRestaurantList = newList
     }
 
 }
