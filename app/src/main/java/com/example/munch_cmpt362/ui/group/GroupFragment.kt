@@ -30,6 +30,9 @@ class GroupFragment: Fragment() {
     private lateinit var myGroupFbListAdapter: GroupFbListAdapter
     private lateinit var myGroupFbViewModel: GroupFbViewModel
 
+    private var lat = 0.0
+    private var lng = 0.0
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -146,10 +149,17 @@ class GroupFragment: Fragment() {
 
             // Add clicked group to viewmodel
             myGroupFbViewModel.clickedGroup.value = groupFb
+            myGroupFbViewModel.lat.value = lat
+            myGroupFbViewModel.lng.value = lng
             findNavController().navigate(R.id.action_mainFragment_to_groupMembersFragment)
         }
 
 
         return view
+    }
+
+    fun updateLocation(latitude: Double, longitude: Double) {
+        lat = latitude
+        lng = longitude
     }
 }

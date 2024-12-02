@@ -12,4 +12,6 @@ class GroupFbViewModel: ViewModel() {
     val voteRestaurantName = MutableLiveData<String>()
     val votedYes = MutableLiveData<Boolean>()
     val votedNo = MutableLiveData<Boolean>()
+    val lat = MutableLiveData<Double>()
+    val lng = MutableLiveData<Double>()
 }

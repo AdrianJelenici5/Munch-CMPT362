@@ -61,7 +61,8 @@ class GroupMembersFragment: Fragment() {
 
         myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
         voteRestaurantList = ArrayList()
-        myRestaurantsListAdapter = VoteRestaurantListAdapter(requireActivity(), voteRestaurantList)
+        myRestaurantsListAdapter = VoteRestaurantListAdapter(requireActivity(), voteRestaurantList,
+            myGroupFbViewModel.lat.value!!, myGroupFbViewModel.lng.value!!)
         restaurantsListview.adapter = myRestaurantsListAdapter
 
         updateMembers()
