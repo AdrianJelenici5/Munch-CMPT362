@@ -282,7 +282,17 @@ class SwipeViewModel @Inject constructor(
                                         "SwipeViewModel",
                                         "Error in exclude list fetch: ${e.message}"
                                     )
+                                    // On error, try again with new coordinates
+                                    val randomCoord = SwipeFragment().generateRandomCoordinate(latitude, longitude, 10000.0)
+                                    fetchRestaurantsWithExcludeList(randomCoord.first, randomCoord.second, restaurantDao, onResult)
+
                                 }
+                            }
+                        }?: run {
+                            // On null response, try again with new coordinates
+                            viewModelScope.launch {
+                                val randomCoord = SwipeFragment().generateRandomCoordinate(latitude, longitude, 10000.0)
+                                fetchRestaurantsWithExcludeList(randomCoord.first, randomCoord.second, restaurantDao, onResult)
                             }
                         }
                     }
@@ -300,6 +310,9 @@ class SwipeViewModel @Inject constructor(
 //        }
             catch (e: Exception) {
                 Log.e("SwipeViewModel", "Error in fetchRestaurantsWithExcludeList: ${e.message}")
+                // On error, try again with new coordinates
+                val randomCoord = SwipeFragment().generateRandomCoordinate(latitude, longitude, 10000.0)
+                fetchRestaurantsWithExcludeList(randomCoord.first, randomCoord.second, restaurantDao, onResult)
             } finally {
                 withContext(Dispatchers.Main) {
                     _isLoading.value = false
