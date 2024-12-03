@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="Nearby Restaurants"
         android:textSize="24sp"
-        android:textColor="@android:color/black"
+        android:textColor="@color/purple_primary"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:paddingBottom="8dp"
@@ -27,7 +27,7 @@
         android:layout_centerHorizontal="true"
         android:text="Your Location: Unknown"
         android:textSize="14sp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/pink_primary"
         android:paddingBottom="16dp" />
 
     <TextView
@@ -48,8 +48,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/myLocationText"
         android:layout_centerInParent="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="48dp" />
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="50dp" />
 
     <ImageView
         android:id="@+id/decision_icon"
