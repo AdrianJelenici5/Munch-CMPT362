@@ -5,9 +5,6 @@ Munch App 🍽️
 
 <img width="360" alt="image" src="https://github.com/user-attachments/assets/77cb9d02-92f3-4498-a1db-ea73d4e38d6d">
 <img width="361" alt="image" src="https://github.com/user-attachments/assets/1a80a6c0-adb0-41b3-a883-6ceb1c67bf0c">
-<img width="360" alt="image" src="https://github.com/user-attachments/assets/cc81c4b6-fc1c-4ce3-aac9-5124ee54cd54">
-
-
 
 
 Munch is a restaurant discovery and group decision-making app that helps friends decide where to eat through a Tinder-style interface and group voting system.
