@@ -53,6 +53,7 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
 
         myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter
+        viewPager.offscreenPageLimit = 1
 
         val selectedColor = ContextCompat.getColorStateList(requireContext(), R.color.tab_icon_color_selector)
 

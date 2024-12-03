@@ -45,7 +45,8 @@ class GroupFragment: Fragment() {
 
         // TRYING OUT THE FIREBASE
         val authViewModel = ViewModelProvider(requireActivity()).get(AuthViewModel::class.java)
-        val userID = authViewModel.returnID()!!.uid
+
+        var userID = authViewModel.returnID()!!.uid
 
         groupFbList = ArrayList()
         myGroupFbListAdapter = GroupFbListAdapter(requireActivity(), groupFbList)

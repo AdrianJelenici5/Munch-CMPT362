@@ -14,7 +14,12 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val auth: FirebaseAuth
 ) {
-    val currentUser = auth.currentUser
+    var currentUser = auth.currentUser
+        init {
+            auth.addAuthStateListener { firebaseAuth ->
+                currentUser = firebaseAuth.currentUser
+            }
+        }
 
     suspend fun login(email: String, password: String): Result<Unit> = try {
         Log.d("AuthRepository", "Attempting login for email: $email")
