@@ -52,12 +52,11 @@ Getting Started 🚀
 1.  Add your Firebase configuration:
     -   Add SHA-1 and SHA-256 certificates to Firebase project for Google Sign-In:
 
-        bash
-
-        Copy
-
         `# Debug SHA-1 and SHA-256
-        cd android && ./gradlew signingReport`
+        ```bash
+        cd android
+        ./gradlew signingReport
+        ```
 
     -   Add the certificates to Firebase Console under Project Settings > Your Apps > SHA certificate fingerprints
 
@@ -65,11 +64,9 @@ Getting Started 🚀
 
 1.  Clone the repository:
 
-bash
-
-Copy
-
+```bash
 `git clone https://github.com/your-username/munch-app.git](https://github.com/AdrianJelenici5/Munch-CMPT362.git`
+```
 
 1.  API Keys:
     -   Yelp API key is already configured in the project
