@@ -23,15 +23,14 @@ class RestaurantCacheManager @Inject constructor(
     private val seenRestaurantIds = mutableSetOf<String>()
     private var isFetching = false
 
-    suspend fun initializeCache(latitude: Double, longitude: Double) {
+    suspend fun initializeCache(latitude: Double, longitude: Double, radiusMeters: Int) {
         withContext(Dispatchers.IO) {
             if (restaurantDao.getCacheSize() < MIN_CACHE_SIZE) {
-                fetchAndCacheRestaurants(latitude, longitude)
+                fetchAndCacheRestaurants(latitude, longitude, radiusMeters)
             }
             clearExpiredCache()
         }
     }
-
     suspend fun getNextBatchOfRestaurants(limit: Int): List<RestaurantEntry> {
         return withContext(Dispatchers.IO) {
             val oneDayAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000) // 24 hours in milliseconds
@@ -40,7 +39,7 @@ class RestaurantCacheManager @Inject constructor(
         }
     }
 
-    suspend fun prefetchRestaurants(latitude: Double, longitude: Double) {
+    suspend fun prefetchRestaurants(latitude: Double, longitude: Double, radiusMeters: Int) {
         if (isFetching) return
 
         withContext(Dispatchers.IO) {
@@ -49,11 +48,11 @@ class RestaurantCacheManager @Inject constructor(
                 val currentCacheSize = restaurantDao.getCacheSize()
 
                 if (currentCacheSize < CACHE_SIZE_LIMIT - PREFETCH_SIZE) {
-                    fetchAndCacheRestaurants(latitude, longitude)
+                    fetchAndCacheRestaurants(latitude, longitude, radiusMeters)
                 } else {
                     val toRemove = PREFETCH_SIZE
                     restaurantDao.removeLowestRatedRestaurants(toRemove)
-                    fetchAndCacheRestaurants(latitude, longitude)
+                    fetchAndCacheRestaurants(latitude, longitude, radiusMeters)
                 }
             } finally {
                 isFetching = false
@@ -61,10 +60,14 @@ class RestaurantCacheManager @Inject constructor(
         }
     }
 
-    private suspend fun fetchAndCacheRestaurants(latitude: Double, longitude: Double) {
+    private suspend fun fetchAndCacheRestaurants(latitude: Double, longitude: Double, radiusMeters: Int) {
         withContext(Dispatchers.IO) {
             try {
-                ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+                ApiHelper.callYelpNearbyRestaurantsApi(
+                    latitude = latitude,
+                    longitude = longitude,
+                    radius = radiusMeters
+                )  { response ->
                     response?.businesses?.let { businesses ->
                         scope.launch {
                             val restaurantEntries = businesses.map { business ->
