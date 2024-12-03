@@ -104,8 +104,8 @@ Current Limitations ⚠️
 
 -   Location updates may drain battery faster in background
 -   Restaurant images may load slowly on slower connections
--   Group voting requires all members to be online
--   Limited offline functionality
+-   Limited offline functionality for now
+-   Restaurant might not show due to the daily request limits
 
 Future Improvements 🚀
 ----------------------
