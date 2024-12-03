@@ -70,7 +70,7 @@ git clone https://github.com/your-username/munch-app.git](https://github.com/Adr
 
 1.  API Keys:
     -   Yelp API key is already configured in the project
-    -   Update `local.properties` with Google Maps API key (if needed):
+    -   Update `local.properties` with Google Maps API key (if needed)
 
 2.  Build and run the project in Android Studio
 
@@ -110,7 +110,7 @@ Current Limitations ⚠️
 Future Improvements 🚀
 ----------------------
 
-We will add more 
+We will add more potential improvements.
 
 Documentation 📚
 ----------------
@@ -137,7 +137,7 @@ Email: <munchapp.cmpt362@gmail.com>
 -   Darian Wong - <dtw11@sfu.ca>
 -   Gabriel Cheng - <gyc5@sfu.ca>
 
-Project Link: <https://drive.google.com/file/d/1ySZhiUKVul3I13NMod8wSwL5Um1RXVpV/view>
+APK Link: <https://drive.google.com/file/d/1ySZhiUKVul3I13NMod8wSwL5Um1RXVpV/view>
 
 Website: <https://munch-app.onrender.com/>
 
