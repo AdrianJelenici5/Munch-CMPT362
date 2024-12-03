@@ -65,7 +65,7 @@ Getting Started 🚀
 1.  Clone the repository:
 
 ```bash
-`git clone https://github.com/your-username/munch-app.git](https://github.com/AdrianJelenici5/Munch-CMPT362.git`
+git clone https://github.com/your-username/munch-app.git](https://github.com/AdrianJelenici5/Munch-CMPT362.git
 ```
 
 1.  API Keys:
