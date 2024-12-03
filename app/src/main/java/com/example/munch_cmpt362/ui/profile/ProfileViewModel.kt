@@ -41,7 +41,7 @@ class ProfileViewModel @Inject constructor(
     val isLoading: LiveData<Boolean> = _isLoading
 
     init {
-        loadUserProfile()
+        // loadUserProfile()
     }
 
     private fun isOnline(): Boolean {
@@ -53,10 +53,14 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                Log.d(TAG, "Starting to load profile")
+                val currentUser = authRepository.currentUser
+                Log.d(TAG, "Current user: ${currentUser?.uid}")
                 val userId = authRepository.currentUser?.uid
                     ?: throw Exception("No authenticated user")
 
                 userRepository.getProfileFlow(userId).collect { result ->
+                    Log.d(TAG, "Profile loaded: $result")
                     _profileState.value = result
                     _isLoading.value = false
                 }
@@ -72,11 +76,13 @@ class ProfileViewModel @Inject constructor(
     fun updateProfile(name: String, bio: String, searchRadius: Int) {
         viewModelScope.launch {
             try {
+                _isLoading.value = true
                 val userId = authRepository.currentUser?.uid ?: throw Exception("No authenticated user")
                 val updates = mapOf(
                     "name" to name,
                     "bio" to bio,
-                    "searchRadius" to searchRadius
+                    "searchRadius" to searchRadius,
+                    "lastUpdated" to System.currentTimeMillis()
                 )
 
                 val result = userRepository.updateProfile(
@@ -84,35 +90,35 @@ class ProfileViewModel @Inject constructor(
                     updates = updates,
                     isOnline = isOnline()
                 )
-                _updateResult.postValue(result)
 
-                // Reload profile after successful update
                 if (result.isSuccess) {
-                    loadUserProfile()
+                    Log.d(TAG, "Profile updated successfully")
+                    loadUserProfile() // Reload profile after successful update
                 }
+
+                _updateResult.postValue(result)
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating profile", e)
                 _updateResult.postValue(Result.failure(e))
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
 
 
-    fun uploadProfilePicture(imageFile: File) {
+    fun uploadProfilePicture(file: File) {
         viewModelScope.launch {
             try {
+                _isLoading.value = true
                 val userId = authRepository.currentUser?.uid ?: throw Exception("No authenticated user")
-                val result = userRepository.uploadProfilePicture(userId, imageFile)
-                _uploadResult.postValue(result)
-
-                // Reload profile after successful upload
-                if (result.isSuccess) {
-                    loadUserProfile()
-                }
+                val result = userRepository.uploadProfilePicture(userId, file)
+                _uploadResult.value = result
             } catch (e: Exception) {
-                Log.e(TAG, "Error uploading profile picture", e)
-                _uploadResult.postValue(Result.failure(e))
+                _uploadResult.value = Result.failure(e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }
