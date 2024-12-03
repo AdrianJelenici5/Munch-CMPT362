@@ -1,5 +1,6 @@
 package com.example.munch_cmpt362.ui.swipe
 
+import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -18,6 +19,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.munch_cmpt362.data.local.dao.RestaurantDao
 import com.example.munch_cmpt362.data.local.entity.RestaurantEntry
+import com.example.munch_cmpt362.data.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -25,7 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SwipeViewModel @Inject constructor(
     private val cacheManager: RestaurantCacheManager,
-    private val restaurantDao: RestaurantDao
+    private val restaurantDao: RestaurantDao,
+    private val userRepository: UserRepository //Connect it with Profile
 ) : ViewModel() {
     private val _restaurants = MutableLiveData<List<Business>>()
     val restaurants: LiveData<List<Business>> = _restaurants
@@ -37,6 +41,36 @@ class SwipeViewModel @Inject constructor(
     // Caching
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
+
+    private var userSearchRadius: Int = 5 // Default 5km
+
+    init {
+        loadUserSearchRadius()
+    }
+    private fun loadUserSearchRadius() {
+        viewModelScope.launch {
+            try {
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+                userRepository.getProfileFlow(userId).collect { result ->
+                    result.onSuccess { profile ->
+                        userSearchRadius = profile.searchRadius
+                        Log.d(TAG, "Loaded user search radius: ${userSearchRadius}km")
+                    }.onFailure { e ->
+                        Log.e(TAG, "Error loading search radius", e)
+                        // Fall back to default radius
+                        userSearchRadius = 5
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in loadUserSearchRadius", e)
+                userSearchRadius = 5
+            }
+        }
+    }
+
+    private fun convertKmToMeters(kilometers: Int): Int {
+        return kilometers * 1000
+    }
 
     fun fetchRestaurants(isFakeData: Boolean = false, latitude: Double, longitude: Double, restaurantDao: RestaurantDao) {
         Log.d("JP:", "dataFetched value ${dataFetched}")
@@ -69,7 +103,8 @@ class SwipeViewModel @Inject constructor(
                             }
                             Log.d("CacheTest", "Starting prefetch for next batch...")
                             // Prefetch next batch in background
-                            cacheManager.prefetchRestaurants(latitude, longitude)
+                            val radiusInMeters = convertKmToMeters(userSearchRadius)
+                            cacheManager.prefetchRestaurants(latitude, longitude, radiusInMeters)
                         } else {
                             Log.d("CacheTest", "Cache empty, fetching from API...")
                             // If cache is empty, fetch from API
@@ -98,7 +133,14 @@ class SwipeViewModel @Inject constructor(
     private suspend fun fetchFromApi(latitude: Double, longitude: Double) {
         withContext(Dispatchers.IO) {
             Log.d("CacheTest", "Making API call...")
-            ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+            val radiusInMeters = convertKmToMeters(userSearchRadius)
+            Log.d(TAG, "Fetching restaurants with radius: ${radiusInMeters}m (${userSearchRadius}km)")
+
+            ApiHelper.callYelpNearbyRestaurantsApi(
+                latitude = latitude,
+                longitude = longitude,
+                radius = radiusInMeters
+            )  { response ->
                 response?.businesses?.let { businesses ->
                     Log.d("CacheTest", "Received ${businesses.size} restaurants from API")
                     val skippedRestaurantIds = mutableListOf<String>()
@@ -184,10 +226,16 @@ class SwipeViewModel @Inject constructor(
                         }
                         return@withContext
                     }
+                    val radiusInMeters = convertKmToMeters(userSearchRadius)
+                    Log.d(TAG, "Fetching restaurants with radius: ${radiusInMeters}m (${userSearchRadius}km)")
 
                     Log.d("JP:", "no cache call api")
 
-                    ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
+                    ApiHelper.callYelpNearbyRestaurantsApi(
+                        latitude = latitude,
+                        longitude = longitude,
+                        radius = radiusInMeters // Add the radius parameter here
+                    ) { response ->
                         response?.businesses?.let { businesses ->
                             viewModelScope.launch {
                                 try {
@@ -357,5 +405,10 @@ class SwipeViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         // Clean up any resources if needed
+    }
+
+    companion object{
+        private const val DEFAULT_RADIUS = 5 // 5km default radius
+        private const val TAG = "SwipeViewModel"
     }
 }
