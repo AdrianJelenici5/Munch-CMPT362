@@ -2,6 +2,7 @@ package com.example.munch_cmpt362.data.remote.api
 
 import android.util.Log
 import com.example.munch_cmpt362.BuildConfig
+import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.YelpResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -101,6 +102,41 @@ object ApiHelper {
             }
         })
     }
+
+    fun getRestaurantById(
+        restaurantId: String,
+        onResult: (Business?) -> Unit
+    ){
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.yelp.com/") // Base URL for Yelp API
+            .addConverterFactory(GsonConverterFactory.create()) // Gson for response deserialization
+            .client(OkHttpClient.Builder().build()) // OkHttpClient to make the request
+            .build()
+
+        // Create YelpService instance
+        val service = retrofit.create(YelpService::class.java)
+
+        // Make the API call with the provided Yelp ID
+        val call = service.getRestaurantDetails("Bearer ${BuildConfig.YELP_API_KEY}", restaurantId)
+
+        call.enqueue(object : Callback<Business> {
+            override fun onResponse(call: Call<Business>, response: Response<Business>) {
+                if (response.isSuccessful) {
+                    Log.d("YelpRestaurant", "Restaurant Details: ${response.body()}")
+                    onResult(response.body()) // Pass the response body to the callback
+                } else {
+                    Log.e("YelpRestaurant", "Error: ${response.code()}")
+                    onResult(null) // Pass null in case of failure
+                }
+            }
+
+            override fun onFailure(call: Call<Business>, t: Throwable) {
+                Log.e("Yelp Search Restaurant Id", "API call failed: ${t.message}")
+                onResult(null)
+            }
+        })
+    }
+
 
     /* how to use
     private fun searchRestaurantsByInput(term: String, latitude: Double, longitude: Double) {

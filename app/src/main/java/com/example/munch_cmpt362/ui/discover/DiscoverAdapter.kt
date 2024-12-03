@@ -1,4 +1,4 @@
-package com.example.munch_cmpt362.ui.reviews
+package com.example.munch_cmpt362.ui.discover
 
 import android.content.Context
 import android.content.Intent
@@ -26,29 +26,35 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class ReviewAdapter(private var restaurants: List<Business>, private val currentLat: Double, private val currentLng: Double
-) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
+class DiscoverAdapter(private var restaurants: List<Business>,
+                      private val currentLat: Double,
+                      private val currentLng: Double,
+                      private val onItemClicked: (Business) -> Unit
+) : RecyclerView.Adapter<DiscoverAdapter.DiscoverViewHolder>() {
 
     fun updateData(newRestaurants: List<Business>) {
         restaurants = newRestaurants
         notifyDataSetChanged()  // Notify the adapter that the data has changed
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DiscoverViewHolder {
         // Log.d("XD:", "XD: onCreateViewHolder")
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_restaurant_review, parent, false)
-        return ReviewViewHolder(view, currentLat, currentLng)
+        return DiscoverViewHolder(view, currentLat, currentLng)
     }
 
-    override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: DiscoverViewHolder, position: Int) {
         // Log.d("XD:", "XD: onBindViewHolder")
         val restaurant = restaurants[position]
+        holder.itemView.setOnClickListener {
+            onItemClicked(restaurant) // Trigger the callback
+        }
         holder.bind(restaurant, holder.itemView.context)
     }
 
     override fun getItemCount(): Int = restaurants.size
 
-    class ReviewViewHolder(itemView: View, private val currentLat: Double, private val currentLng: Double) : RecyclerView.ViewHolder(itemView) {
+    class DiscoverViewHolder(itemView: View, private val currentLat: Double, private val currentLng: Double) : RecyclerView.ViewHolder(itemView) {
 
         private val nameTextView: TextView = itemView.findViewById(R.id.tvName)
         private val restaurantInfoTextView: TextView = itemView.findViewById(R.id.restaurantInfo)
@@ -56,8 +62,7 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
         private val imageView: ImageView = itemView.findViewById(R.id.ivImage)
         private val openOrClosed: ImageView = itemView.findViewById(R.id.openOrClosed)
         private val restaurantType: TextView = itemView.findViewById(R.id.restaurantType)
-
-        private val geocodedAddressesCache = mutableMapOf<String, Pair<Double, Double>>()
+        // private val openNowStatus: TextView = itemView.findViewById(R.id.openNowStatus)
 
         fun bind(restaurant: Business, context: Context) {
             // Log.d("XD:", "XD: binding")
@@ -102,33 +107,28 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
             Glide.with(itemView.context).load(restaurant.image_url).into(imageView)
             //locationTextView.text = restaurant.location
 
-            itemView.setOnClickListener {
-                Log.d("XD:", "XD: Item Clicked")
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(restaurant.url))
-                itemView.context.startActivity(intent)
-            }
-
         }
 
-        private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
-            val addressKey = address
-            geocodedAddressesCache[addressKey]?.let { return it }
+        private suspend fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
+            return withContext(Dispatchers.IO) {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                // Attempt to get the list of addresses based on the address string
+                val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
 
-            val geocoder = Geocoder(context, Locale.getDefault())
-            val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
-
-            if (!addressList.isNullOrEmpty()) {
-                val address = addressList[0]
-                val latLng = Pair(address.latitude, address.longitude)
-                // Cache the result using the address string as the key
-                geocodedAddressesCache[addressKey] = latLng
-                return latLng
+                if (!addressList.isNullOrEmpty()) {
+                    // If the list is not null or empty, get the first address
+                    val location = addressList[0]
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    Pair(latitude, longitude)
+                } else {
+                    Log.e("Geocoding", "Address not found or geocoding failed.")
+                    null // Return null if no result is found
+                }
             }
-
-            return null
         }
 
-        private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        private suspend fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
             // Radius of the Earth in meters
             val R = 6371000.0
 
@@ -155,5 +155,3 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
 
 
 }
-
-
