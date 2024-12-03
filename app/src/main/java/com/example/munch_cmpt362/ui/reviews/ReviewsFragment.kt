@@ -14,12 +14,14 @@ import android.widget.AdapterView
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.ui.swipe.SwipeViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import kotlin.math.*
 
@@ -28,10 +30,10 @@ import kotlin.math.*
 //  Find out how to fix performance so this doesnt happen
 // TODO: Some restaurants arent being displayed in the list for some reason
 //  even tho I get them using same method as swipe fragment
-
+@AndroidEntryPoint
 class ReviewsFragment : Fragment() {
 
-    private val reviewViewModel: ReviewViewModel by viewModels()
+    private val reviewViewModel: ReviewViewModel by activityViewModels()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var reviewAdapter : ReviewAdapter
@@ -80,6 +82,8 @@ class ReviewsFragment : Fragment() {
                 val sortedRestaurants = sortRestaurants(restaurants)
                 reviewAdapter = ReviewAdapter(sortedRestaurants, lat, lng)
                 recyclerView.adapter = reviewAdapter
+                recyclerView.visibility = View.VISIBLE
+                emptyTextView.visibility = View.GONE
             } else {
 //                noMoreRestaurantsText.visibility = View.VISIBLE
                 recyclerView.visibility = View.GONE
@@ -87,7 +91,7 @@ class ReviewsFragment : Fragment() {
                 Log.d("XD:", "No restaurants available.")
             }
         }
-        reviewViewModel.fetchRestaurants(lat, lng)
+        reviewViewModel.fetchRestaurants()
     }
 
     fun updateLocation(latitude: Double, longitude: Double) {
@@ -190,12 +194,17 @@ class ReviewsFragment : Fragment() {
                 Log.d("XD:", "No restaurants available.")
             }
         }
-        reviewViewModel.fetchRestaurants(lat, lng)
+        reviewViewModel.fetchRestaurants()
     }
 
 //    private fun openLink(url: String) {
 //        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 //        startActivity(intent)
 //    }
+
+    override fun onResume() {
+        super.onResume()
+        reviewViewModel.fetchRestaurants()
+    }
 
 }

@@ -61,4 +61,12 @@ interface RestaurantDao {
     @Query("DELETE FROM restaurant_table WHERE lastFetched < :timestamp")
     suspend fun clearOldCache(timestamp: Long)
 
+    @Query("SELECT * FROM restaurant_table WHERE restaurantId = :id")
+    suspend fun getRestaurantById(id: String): RestaurantEntry?
+
+    @Query("UPDATE restaurant_table SET isSwiped = :isSwiped WHERE restaurantId = :restaurantId")
+    fun updateIsSwiped(restaurantId: String, isSwiped: Boolean)
+
+    @Query("SELECT * FROM restaurant_table WHERE isSwiped = 1")
+    suspend fun getSwipedRestaurant(): List<RestaurantEntry>
 }

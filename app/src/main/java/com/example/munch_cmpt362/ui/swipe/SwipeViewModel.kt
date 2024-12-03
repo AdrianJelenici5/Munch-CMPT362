@@ -61,6 +61,10 @@ class SwipeViewModel @Inject constructor(
                             Log.d("CacheTest", "Found ${cachedRestaurants.size} restaurants in cache")
                             withContext(Dispatchers.Main) {
                                 _restaurants.value = cachedRestaurants.map { it.toBusiness() }
+                                //after fetching old data, we need to all api update it
+                                cachedRestaurants.map {
+                                    restaurantDao.updateLastFetched(it.restaurantId, System.currentTimeMillis())
+                                }
                                 dataFetched = true
                             }
                             Log.d("CacheTest", "Starting prefetch for next batch...")
@@ -97,27 +101,40 @@ class SwipeViewModel @Inject constructor(
             ApiHelper.callYelpNearbyRestaurantsApi(latitude, longitude) { response ->
                 response?.businesses?.let { businesses ->
                     Log.d("CacheTest", "Received ${businesses.size} restaurants from API")
+                    val skippedRestaurantIds = mutableListOf<String>()
                     viewModelScope.launch {
                         viewModelScope.launch {
                             try {
                                 withContext(Dispatchers.IO) {
-                                    val restaurantEntries = businesses.map { business ->
-                                        RestaurantEntry(
-                                            restaurantId = business.id,
-                                            name = business.name,
-                                            rating = business.rating,
-                                            reviewCount = business.review_count,
-                                            price = business.price,
-                                            location = business.location,
-                                            phone = business.phone,
-                                            category = business.categories[0],
-                                            websiteUrl = business.url,
-                                            imageUrl = business.image_url,
-                                            businessHours = business.business_hours,
-                                            lastFetched = System.currentTimeMillis(),
-                                            isCached = true,
-                                            isPreFetched = false
-                                        )
+                                    val oneDayAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000)
+
+                                    val restaurantEntries = businesses.mapNotNull  { business ->
+                                        val existingRestaurant = restaurantDao.getRestaurantById(business.id)
+                                        if (existingRestaurant != null) {
+                                            Log.d("CacheTest", "${existingRestaurant.lastFetched} < ${oneDayAgo} is ${existingRestaurant.lastFetched < oneDayAgo}")
+                                        }
+                                        Log.d("CacheTest", "Making API call...")
+                                        if (existingRestaurant == null || existingRestaurant.lastFetched < oneDayAgo) {
+                                            RestaurantEntry(
+                                                restaurantId = business.id,
+                                                name = business.name,
+                                                rating = business.rating,
+                                                reviewCount = business.review_count,
+                                                price = business.price,
+                                                location = business.location,
+                                                phone = business.phone,
+                                                category = business.categories[0],
+                                                websiteUrl = business.url,
+                                                imageUrl = business.image_url,
+                                                businessHours = business.business_hours,
+                                                lastFetched = System.currentTimeMillis(),
+                                                isCached = true,
+                                                isPreFetched = false
+                                            )
+                                        } else {
+                                            skippedRestaurantIds.add(business.id)
+                                            null //skip adding to database if fetch less than a day ago
+                                        }
                                     }
                                     Log.d("CacheTest", "Caching ${restaurantEntries.size} restaurants")
                                     restaurantDao.insertAll(restaurantEntries)
@@ -128,8 +145,16 @@ class SwipeViewModel @Inject constructor(
                                 }
 
                                 withContext(Dispatchers.Main) {
-                                    dataFetched = true
-                                    _restaurants.value = businesses
+                                    val filteredBusinesses = businesses.filter { it.id !in skippedRestaurantIds }
+                                    if (filteredBusinesses.isEmpty()) {
+                                        val randomCoord = SwipeFragment().generateRandomCoordinate(latitude, longitude, 10000.0)
+                                        val newLat = randomCoord.first
+                                        val newLng = randomCoord.second
+                                        fetchFromApi(newLat, newLng)
+                                    } else {
+                                        dataFetched = true
+                                        _restaurants.value = filteredBusinesses
+                                    }
                                 }
                             } catch (e: Exception) {
                                 Log.e("SwipeViewModel", "Error in API fetch: ${e.message}")
@@ -152,7 +177,6 @@ class SwipeViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     // Try to get unseen restaurants from cache first
                     val cachedRestaurants = cacheManager.getNextBatchOfRestaurants(10)
-                    Log.d("JP:", "expand cache, ${cachedRestaurants}.")
                     if (cachedRestaurants.isNotEmpty()) {
                         withContext(Dispatchers.Main) {
                             _restaurants.value = cachedRestaurants.map { it.toBusiness() }
@@ -200,13 +224,10 @@ class SwipeViewModel @Inject constructor(
                                             onResult(false)
                                         }
                                     } else {
-                                        withContext(Dispatchers.Main) {
-                                            Log.d(
-                                                "JP:",
-                                                "No new restaurants to fetch, all are excluded."
-                                            )
-                                            onResult(true)
-                                        }
+                                        val randomCoord = SwipeFragment().generateRandomCoordinate(latitude, longitude, 10000.0)
+                                        val newLat = randomCoord.first
+                                        val newLng = randomCoord.second
+                                        fetchRestaurantsWithExcludeList(newLat, newLng, restaurantDao, onResult)
                                     }
                                 } catch (e: Exception) {
                                     Log.e(
