@@ -1,5 +1,6 @@
 package com.example.munch_cmpt362.ui.group
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,16 +9,22 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.munch_cmpt362.Business
 import com.example.munch_cmpt362.R
+import com.example.munch_cmpt362.data.remote.api.ApiHelper
 import com.example.munch_cmpt362.ui.auth.AuthViewModel
 import com.example.munch_cmpt362.ui.group.fb.GroupFbViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class GroupMembersFragment: Fragment() {
@@ -25,26 +32,13 @@ class GroupMembersFragment: Fragment() {
     private lateinit var addGroupMemberButton: Button
     private lateinit var myGroupMemberListView: ListView
 
-    //private lateinit var groupMemberList: ArrayList<User>
-    //lateinit var myGroupMemberListAdapter: GroupMemberListAdapter
-//    private lateinit var groupDatabase: GroupDatabase
-//    private lateinit var groupDatabaseDao: GroupDatabaseDao
-//    lateinit var groupViewModel: GroupViewModel
-//    private lateinit var groupRepository: GroupRepository
-//    private lateinit var groupViewModelFactory: GroupViewModelFactory
-//
-//    private var STUB_USER_ID = 1L
-    //private var STUB_GROUP_ID = 1L
-
-    //private lateinit var allUserGroupMembers: List<User>
-
     lateinit var myGroupFbMemberListAdapter: GroupFbMemberListAdapter
     private lateinit var groupFbMemberList: ArrayList<Users>
     private lateinit var allUserGroupFbMembers: MutableList<Users>
     private lateinit var myGroupFbViewModel: GroupFbViewModel
 
     private lateinit var topRestaurantTextview: TextView
-    private lateinit var restaurantsListview: ListView
+    private lateinit var restaurantsListview: RecyclerView
     lateinit var myRestaurantsListAdapter: VoteRestaurantListAdapter
     private lateinit var voteRestaurantList: ArrayList<String>
 
@@ -60,21 +54,7 @@ class GroupMembersFragment: Fragment() {
 
         topRestaurantTextview = view.findViewById(R.id.Most_voted)
         restaurantsListview = view.findViewById(R.id.Voting_listview)
-
-        //groupMemberList = ArrayList()
-        //allUserGroupMembers = ArrayList()
-        //myGroupMemberListAdapter = GroupMemberListAdapter(requireActivity(), groupMemberList)
-        //myGroupMemberListView.adapter = myGroupMemberListAdapter
-
-//        groupDatabase = GroupDatabase.getInstance(requireActivity())
-//        groupDatabaseDao = groupDatabase.groupDatabaseDao
-//
-//        groupRepository = GroupRepository(groupDatabaseDao, STUB_USER_ID)
-//        groupViewModelFactory = GroupViewModelFactory(groupRepository)
-//        groupViewModel = ViewModelProvider(requireActivity(), groupViewModelFactory).get(
-//            GroupViewModel::class.java)
-
-        //updateMembers()
+        restaurantsListview.layoutManager = LinearLayoutManager(context)
 
 
         groupFbMemberList = ArrayList()
@@ -84,7 +64,33 @@ class GroupMembersFragment: Fragment() {
 
         myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
         voteRestaurantList = ArrayList()
-        myRestaurantsListAdapter = VoteRestaurantListAdapter(requireActivity(), voteRestaurantList)
+        myRestaurantsListAdapter = VoteRestaurantListAdapter(requireActivity(), voteRestaurantList,
+            myGroupFbViewModel.lat.value!!, myGroupFbViewModel.lng.value!!) {
+                restaurantId ->
+                // Put restaurant name instead of ID for Voting
+                myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
+                val voteRestaurantDialog = VoteRestaurantDialog()
+                voteRestaurantDialog.show(parentFragmentManager, "voting")
+                // wait
+                parentFragmentManager.executePendingTransactions()
+                voteRestaurantDialog.dialog?.setOnDismissListener{
+                    // voted yes to restaurant
+                    if(myGroupFbViewModel.votedYes.value == true){
+                        // check if any database records from same group, user, restaurant
+                        myGroupFbViewModel.votedYes.value = false
+                        votedYes()
+                    }
+
+                    // voted no to restaurant
+                    if(myGroupFbViewModel.votedNo.value == true){
+                        myGroupFbViewModel.votedNo.value = false
+                        votedNo()
+                    }
+
+                    (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
+                }
+        }
+
         restaurantsListview.adapter = myRestaurantsListAdapter
 
         updateMembers()
@@ -106,39 +112,72 @@ class GroupMembersFragment: Fragment() {
                     var groupId = myGroupFbViewModel.clickedGroup.value!!.groupId
                     val database = Firebase.firestore
                     CoroutineScope(IO).launch {
-                        database.collection("group").whereEqualTo("groupId", groupId).get()
-                            .addOnSuccessListener { documents ->
-                                // There should only be one document
-                                for (document in documents) {
-                                    Log.d("TAG", "GABRIEL ${document.id} => ${document.data}")
-                                    var listUsers = document.data["listOfUserIds"] as MutableList<String>
-                                    listUsers.add(addedUser!!)
-                                    // add user restaurant preferences too
-                                    val userPrefRef = Firebase.firestore.collection("user-preference").document(addedUser).get()
-                                        .addOnSuccessListener { userPref ->
-                                            val listRestaurant: MutableList<String> = ArrayList()
-                                            val rest1 = userPref.data!!["restaurant_1"].toString()
-                                            val rest2 = userPref.data!!["restaurant_2"].toString()
-                                            val rest3 = userPref.data!!["restaurant_3"].toString()
-                                            if (rest1 != "null") {
-                                                listRestaurant.add(rest1)
-                                            }
-                                            if (rest2 != "null") {
-                                                listRestaurant.add(rest2)
-                                            }
-                                            if (rest3 != "null") {
-                                                listRestaurant.add(rest3)
-                                            }
-                                            var oldGroupRestaurant = document.data["listOfRestaurants"] as MutableList<String>
-                                            // get distinct items from both list
-                                            var newGroupRestaurant = oldGroupRestaurant.union(listRestaurant).toMutableList()
-                                            database.collection("group").document(groupId)
-                                                .update("listOfRestaurants", newGroupRestaurant)
-                                        }
-                                    database.collection("group").document(groupId)
-                                        .update("listOfUserIds", listUsers)
+                        database.collection("users").document(addedUser!!).get()
+                            .addOnSuccessListener { checkUser ->
+                                // No user id matched in database
+                                if (!checkUser.exists()) {
+                                    requireActivity().runOnUiThread {
+                                        Toast.makeText(
+                                            activity,
+                                            "Sorry, user not found",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    return@addOnSuccessListener
                                 }
-                                updateMembers()
+
+                                database.collection("group").whereEqualTo("groupId", groupId).get()
+                                    .addOnSuccessListener { documents ->
+                                        // There should only be one document
+                                        for (document in documents) {
+                                            Log.d(
+                                                "TAG",
+                                                "GABRIEL ${document.id} => ${document.data}"
+                                            )
+                                            var listUsers =
+                                                document.data["listOfUserIds"] as MutableList<String>
+                                            listUsers.add(addedUser!!)
+                                            // add user restaurant preferences too
+                                            val userPrefRef =
+                                                Firebase.firestore.collection("user-preference")
+                                                    .document(addedUser).get()
+                                                    .addOnSuccessListener { userPref ->
+                                                        val listRestaurant: MutableList<String> =
+                                                            ArrayList()
+                                                        val rest1 =
+                                                            userPref.data!!["restaurant_1"].toString()
+                                                        val rest2 =
+                                                            userPref.data!!["restaurant_2"].toString()
+                                                        val rest3 =
+                                                            userPref.data!!["restaurant_3"].toString()
+                                                        if (rest1 != "null") {
+                                                            listRestaurant.add(rest1)
+                                                        }
+                                                        if (rest2 != "null") {
+                                                            listRestaurant.add(rest2)
+                                                        }
+                                                        if (rest3 != "null") {
+                                                            listRestaurant.add(rest3)
+                                                        }
+                                                        var oldGroupRestaurant =
+                                                            document.data["listOfRestaurants"] as MutableList<String>
+                                                        // get distinct items from both list
+                                                        var newGroupRestaurant =
+                                                            oldGroupRestaurant.union(listRestaurant)
+                                                                .toMutableList()
+                                                        database.collection("group")
+                                                            .document(groupId)
+                                                            .update(
+                                                                "listOfRestaurants",
+                                                                newGroupRestaurant
+                                                            )
+                                                        database.collection("group")
+                                                            .document(groupId)
+                                                            .update("listOfUserIds", listUsers)
+                                                        updateMembers()
+                                                    }
+                                        }
+                                    }
                             }
                     }
                 }
@@ -146,45 +185,36 @@ class GroupMembersFragment: Fragment() {
             }
         }
 
-        restaurantsListview.setOnItemClickListener { parent, view, position, id ->
-            var restaurantId = myRestaurantsListAdapter.getItem(position)
-            myGroupFbViewModel.voteRestaurantName.value = restaurantId.toString()
-            val voteRestaurantDialog = VoteRestaurantDialog()
-            voteRestaurantDialog.show(parentFragmentManager, "voting")
-            // wait
-            parentFragmentManager.executePendingTransactions()
-            voteRestaurantDialog.dialog?.setOnDismissListener{
-                // voted yes to restaurant
-                if(myGroupFbViewModel.votedYes.value == true){
-                    // check if any database records from same group, user, restaurant
-                    myGroupFbViewModel.votedYes.value = false
-                    votedYes()
-                }
-
-                // voted no to restaurant
-                if(myGroupFbViewModel.votedNo.value == true){
-                    myGroupFbViewModel.votedNo.value = false
-                    votedNo()
-                }
-
-                (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
-            }
-
-        }
+//        restaurantsListview.setOnItemClickListener { parent, view, position, id ->
+//            var restaurantId = myRestaurantsListAdapter.getItem(position)
+//            // Put restaurant name instead of ID for Voting
+//            myGroupFbViewModel.voteRestaurantName.value = myRestaurantsListAdapter.restaurantCache[restaurantId]!!.name
+//            val voteRestaurantDialog = VoteRestaurantDialog()
+//            voteRestaurantDialog.show(parentFragmentManager, "voting")
+//            // wait
+//            parentFragmentManager.executePendingTransactions()
+//            voteRestaurantDialog.dialog?.setOnDismissListener{
+//                // voted yes to restaurant
+//                if(myGroupFbViewModel.votedYes.value == true){
+//                    // check if any database records from same group, user, restaurant
+//                    myGroupFbViewModel.votedYes.value = false
+//                    votedYes()
+//                }
+//
+//                // voted no to restaurant
+//                if(myGroupFbViewModel.votedNo.value == true){
+//                    myGroupFbViewModel.votedNo.value = false
+//                    votedNo()
+//                }
+//
+//                (parentFragmentManager.findFragmentByTag("voting") as DialogFragment).dismiss()
+//            }
+//
+//        }
 
         return view
     }
 
-//    fun updateMembers(){
-//        CoroutineScope(IO).launch{
-//            allUserGroupMembers = groupDatabaseDao.getAllUsersInGroup(groupViewModel.clickedGroup.value!!.groupID)
-//            println("THIS IS GROUP: $allUserGroupMembers")
-//            activity?.runOnUiThread(){
-//                myGroupMemberListAdapter.replace(allUserGroupMembers)
-//                myGroupMemberListAdapter.notifyDataSetChanged()
-//            }
-//        }
-//    }
     fun updateMembers() {
         CoroutineScope(IO).launch {
             // get members in the group
@@ -198,7 +228,6 @@ class GroupMembersFragment: Fragment() {
                         val listUsers = document.data["listOfUserIds"] as MutableList<String>
                         val listRestaurants = document.data["listOfRestaurants"] as MutableList<String>
 
-                        // update restaurant list
                         myRestaurantsListAdapter.replace(listRestaurants)
                         myRestaurantsListAdapter.notifyDataSetChanged()
 

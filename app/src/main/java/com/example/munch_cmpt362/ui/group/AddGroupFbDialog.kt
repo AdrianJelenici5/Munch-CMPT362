@@ -48,9 +48,9 @@ class AddGroupFbDialog: DialogFragment(), DialogInterface.OnClickListener {
                 val myGroupFbViewModel = ViewModelProvider(requireActivity()).get(GroupFbViewModel::class.java)
                 myGroupFbViewModel.groupAddedName.value = editText.text.toString()
             }
-            Toast.makeText(activity, "ok clicked", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, "ok clicked", Toast.LENGTH_SHORT).show()
         } else if (item == DialogInterface.BUTTON_NEGATIVE) {
-            Toast.makeText(activity, "cancel clicked", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, "cancel clicked", Toast.LENGTH_SHORT).show()
         }
     }
 

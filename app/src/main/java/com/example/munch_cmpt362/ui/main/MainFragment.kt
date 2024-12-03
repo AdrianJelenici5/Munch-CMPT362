@@ -53,6 +53,7 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
 
         myMyFragmentStateAdapter = MyFragmentStateAdapter(requireActivity(), fragments)
         viewPager.adapter = myMyFragmentStateAdapter
+        viewPager.offscreenPageLimit = 1
 
         val selectedColor = ContextCompat.getColorStateList(requireContext(), R.color.tab_icon_color_selector)
 
@@ -110,6 +111,7 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
         swipeFragment.updateLocation(location.latitude, location.longitude)
         reviewsFragment.updateLocation(location.latitude, location.longitude)
         discoverFragment.updateLocation(location.latitude, location.longitude)
+        groupFragment.updateLocation(location.latitude, location.longitude)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
