@@ -89,7 +89,7 @@ Current Limitations ⚠️
 ### API Restrictions
 
 -   **Yelp API**: Currently on Free Tier
-    -   Limited to 500 requests per day
+    -   Limited to 300 requests per day
     -   Maximum of 3 API calls per second
     -   Business photos limited to 3 per listing
     -   Search radius maximum of 40000 meters
