@@ -42,7 +42,6 @@ import java.util.Locale
 //  6) Also sort all restaurnants in this fragment by distance closes to you
 //      -> means i have to optimize this sort method
 
-
 @AndroidEntryPoint
 class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
     GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
@@ -395,15 +394,15 @@ class DiscoverFragment : Fragment(), OnMapReadyCallback, LocationListener,
 
     private fun expandList() {
         val params = recyclerView.layoutParams as ConstraintLayout.LayoutParams
-        params.topMargin = dpToPx(135) // Set the top margin to 100
+        params.topMargin = dpToPx(132) // Set the top margin to 100
         recyclerView.layoutParams = params
         recyclerView.requestLayout()
         expandTextView.text = "exit"
         expanded = true
 
         val params2 = searchView.layoutParams as ConstraintLayout.LayoutParams
-        params2.marginStart = dpToPx(0)
-        params2.marginEnd = dpToPx(0)
+//        params2.marginStart = dpToPx(0)
+//        params2.marginEnd = dpToPx(0)
         searchView.layoutParams = params2
         searchView.requestLayout()
 

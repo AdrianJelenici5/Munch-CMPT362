@@ -56,7 +56,8 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
         private val imageView: ImageView = itemView.findViewById(R.id.ivImage)
         private val openOrClosed: ImageView = itemView.findViewById(R.id.openOrClosed)
         private val restaurantType: TextView = itemView.findViewById(R.id.restaurantType)
-        // private val openNowStatus: TextView = itemView.findViewById(R.id.openNowStatus)
+
+        private val geocodedAddressesCache = mutableMapOf<String, Pair<Double, Double>>()
 
         fun bind(restaurant: Business, context: Context) {
             // Log.d("XD:", "XD: binding")
@@ -109,26 +110,25 @@ class ReviewAdapter(private var restaurants: List<Business>, private val current
 
         }
 
-        private suspend fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
-            return withContext(Dispatchers.IO) {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                // Attempt to get the list of addresses based on the address string
-                val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
+        private fun getLatLngFromAddress(context: Context, address: String): Pair<Double, Double>? {
+            val addressKey = address
+            geocodedAddressesCache[addressKey]?.let { return it }
 
-                if (!addressList.isNullOrEmpty()) {
-                    // If the list is not null or empty, get the first address
-                    val location = addressList[0]
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    Pair(latitude, longitude)
-                } else {
-                    Log.e("Geocoding", "Address not found or geocoding failed.")
-                    null // Return null if no result is found
-                }
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val addressList: List<Address>? = geocoder.getFromLocationName(address, 1)
+
+            if (!addressList.isNullOrEmpty()) {
+                val address = addressList[0]
+                val latLng = Pair(address.latitude, address.longitude)
+                // Cache the result using the address string as the key
+                geocodedAddressesCache[addressKey] = latLng
+                return latLng
             }
+
+            return null
         }
 
-        private suspend fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
             // Radius of the Earth in meters
             val R = 6371000.0
 
