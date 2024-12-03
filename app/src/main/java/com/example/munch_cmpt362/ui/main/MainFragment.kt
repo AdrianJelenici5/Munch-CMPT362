@@ -1,6 +1,7 @@
 package com.example.munch_cmpt362.ui.main
 
 import android.Manifest
+import android.content.ContentValues.TAG
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.location.Location
@@ -8,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -21,6 +23,7 @@ import com.example.munch_cmpt362.ui.profile.ProfileFragment
 import com.example.munch_cmpt362.ui.reviews.ReviewsFragment
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -36,9 +39,14 @@ class MainFragment : Fragment(R.layout.fragment_main), LocationListener {
     private lateinit var locationManager: LocationManager
     private val PERMISSION_REQUEST_CODE = 0
     private val tabTitles = arrayOf("Swipe", "Discover", "Reviews", "Groups", "Profile")
+    private val TAG = "MainFragment"
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Add debug logging
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        Log.d(TAG, "Current user in MainFragment: ${currentUser?.uid}")
 
         viewPager = view.findViewById(R.id.viewpager)
         viewPager.isUserInputEnabled = false
