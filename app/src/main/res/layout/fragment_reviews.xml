@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="Your Restaurants"
         android:textSize="24sp"
-        android:textColor="@android:color/black"
+        android:textColor="@color/purple_primary"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:paddingBottom="5dp"

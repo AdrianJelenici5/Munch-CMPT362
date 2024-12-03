@@ -1,6 +1,8 @@
 package com.example.munch_cmpt362.ui.profile
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -9,6 +11,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -19,6 +22,7 @@ import com.example.munch_cmpt362.databinding.FragmentProfileBinding
 import com.example.munch_cmpt362.util.PhotoUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import android.content.Context
 import java.io.File
 import java.io.FileOutputStream
 
@@ -307,10 +311,29 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
+    private fun copyToClipboard(text: String) {
+        try {
+            val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("User ID", text)
+            clipboard.setPrimaryClip(clip)
+
+            // Show a shorter toast message
+            Toast.makeText(requireContext(), "ID copied!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error copying to clipboard", e)
+            Toast.makeText(requireContext(), "Failed to copy", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun updateUIWithProfile(profile: UserProfileEntity) {
         try {
             binding.apply {
                 tvUsername.text = "@${profile.username}"
+                tvUserId.text = "UID: ${profile.userId}"  // Only show the ID, not the "User ID: " prefix
+                copyButton.setOnClickListener {
+                    copyToClipboard(profile.userId)  // Only copy the ID
+                }
+
                 // Basic info
                 etName.setText(profile.name)
                 etBio.setText(profile.bio)
