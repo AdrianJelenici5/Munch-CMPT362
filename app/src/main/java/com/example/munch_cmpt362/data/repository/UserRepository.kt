@@ -43,6 +43,7 @@ class UserRepository @Inject constructor(
                     if (data != null) {
                         val profile = UserProfileEntity(
                             userId = userId,
+                            username = data["username"] as? String ?: "",
                             name = data["name"] as? String ?: "",
                             email = data["email"] as? String ?: "",
                             bio = data["bio"] as? String ?: "",
@@ -57,6 +58,7 @@ class UserRepository @Inject constructor(
                     // If no profile exists, create a default one
                     val defaultProfile = UserProfileEntity(
                         userId = userId,
+                        username = "",
                         name = "",
                         email = auth.currentUser?.email ?: "",
                         bio = "",
@@ -90,18 +92,21 @@ class UserRepository @Inject constructor(
         val userId = auth.currentUser?.uid ?: throw Exception("No authenticated user")
         val userDto = mapOf(
             "userId" to userId,
+            "username" to "",
             "email" to email,
             "name" to "",
-            "bio" to ""
+            "bio" to "",
+            "searchRadius" to 5,
+            "createdAt" to System.currentTimeMillis()
         )
 
-        Log.d(TAG, "Creating initial profile for user: $userId")
+        Log.d("UserRepository", "Creating initial profile for user: $userId")
         usersCollection.document(userId)
             .set(userDto)
             .await()
         Result.success(Unit)
     } catch (e: Exception) {
-        Log.e(TAG, "Error creating initial profile", e)
+        Log.e("UserRepository", "Error creating initial profile", e)
         Result.failure(e)
     }
 
@@ -195,7 +200,12 @@ class UserRepository @Inject constructor(
 
 
     suspend fun uploadProfilePicture(userId: String, imageFile: File): Result<String> = try {
-        val storageRef = storage.reference.child("profile_pictures/$userId.jpg")
+        // Update the storage reference to match the security rules structure
+        val storageRef = storage.reference
+            .child("profile_pictures")
+            .child(userId)
+            .child("profile.jpg")  // or use a timestamp-based name
+
         val uploadTask = storageRef.putFile(Uri.fromFile(imageFile)).await()
         val downloadUrl = uploadTask.storage.downloadUrl.await().toString()
 
