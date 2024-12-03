@@ -1,7 +1,10 @@
+![munch_logo](https://github.com/user-attachments/assets/03c613e9-8fb9-46f0-9a08-c558dbe73f87)
+
 Munch App 🍽️
 =============
 
-![munch_phone](https://github.com/user-attachments/assets/be982f3f-7730-40f3-a0d7-9f476208d96b)
+<img width="360" alt="image" src="https://github.com/user-attachments/assets/77cb9d02-92f3-4498-a1db-ea73d4e38d6d">
+<img width="361" alt="image" src="https://github.com/user-attachments/assets/1a80a6c0-adb0-41b3-a883-6ceb1c67bf0c">
 
 
 Munch is a restaurant discovery and group decision-making app that helps friends decide where to eat through a Tinder-style interface and group voting system.
