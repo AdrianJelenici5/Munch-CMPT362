@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 
-
     id("kotlin-kapt")
 
     alias(libs.plugins.google.services)
@@ -73,6 +72,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // Hilt
     implementation(libs.hilt.android)

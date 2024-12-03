@@ -1,13 +1,19 @@
 package com.example.munch_cmpt362.ui.auth
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.databinding.FragmentSignupBinding
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -20,9 +26,11 @@ class SignupFragment : Fragment(R.layout.fragment_signup) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentSignupBinding.bind(view)
 
+
         setupClickListeners()
-        observeSignupResult()
+        observeAuthResults()
     }
+
 
     private fun setupClickListeners() {
         binding.btnSignup.setOnClickListener {
@@ -34,6 +42,8 @@ class SignupFragment : Fragment(R.layout.fragment_signup) {
                 viewModel.register(email, password)
             }
         }
+
+
 
         binding.tvLogin.setOnClickListener {
             findNavController().navigateUp()
@@ -59,16 +69,32 @@ class SignupFragment : Fragment(R.layout.fragment_signup) {
         return true
     }
 
-    private fun observeSignupResult() {
+
+    private fun observeAuthResults() {
         viewModel.registerResult.observe(viewLifecycleOwner) { result ->
             result.fold(
                 onSuccess = {
-                    findNavController().navigate(R.id.action_signup_to_login)
+                    findNavController().navigate(R.id.action_signup_to_userDetails)
                 },
                 onFailure = { exception ->
                     Toast.makeText(
                         requireContext(),
                         "Registration failed: ${exception.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            )
+        }
+
+        viewModel.googleSignInResult.observe(viewLifecycleOwner) { result ->
+            result.fold(
+                onSuccess = {
+                    findNavController().navigate(R.id.action_signup_to_userDetails)
+                },
+                onFailure = { exception ->
+                    Toast.makeText(
+                        requireContext(),
+                        "Google sign in failed: ${exception.message}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

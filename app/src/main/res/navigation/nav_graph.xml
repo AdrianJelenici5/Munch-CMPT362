@@ -20,6 +20,18 @@
             app:popUpToInclusive="true" />
     </fragment>
 
+
+    <fragment
+        android:id="@+id/signupFragment"
+        android:name="com.example.munch_cmpt362.ui.auth.SignupFragment"
+        android:label="SignupFragment">
+        <action
+            android:id="@+id/action_signup_to_userDetails"
+            app:destination="@id/userDetailsFragment"
+            app:popUpTo="@id/signupFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.example.munch_cmpt362.ui.auth.LoginFragment"
@@ -32,16 +44,22 @@
             app:destination="@id/mainFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
+        <!-- New action added for Google Sign In new users -->
+        <action
+            android:id="@+id/action_login_to_userDetails"
+            app:destination="@id/userDetailsFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment
-        android:id="@+id/signupFragment"
-        android:name="com.example.munch_cmpt362.ui.auth.SignupFragment"
-        android:label="SignupFragment">
+        android:id="@+id/userDetailsFragment"
+        android:name="com.example.munch_cmpt362.ui.auth.UserDetailsFragment"
+        android:label="UserDetailsFragment">
         <action
-            android:id="@+id/action_signup_to_login"
-            app:destination="@id/loginFragment"
-            app:popUpTo="@id/loginFragment"
+            android:id="@+id/action_userDetails_to_main"
+            app:destination="@id/mainFragment"
+            app:popUpTo="@id/userDetailsFragment"
             app:popUpToInclusive="true" />
     </fragment>
 
@@ -58,6 +76,7 @@
             android:id="@+id/action_mainFragment_to_groupMembersFragment"
             app:destination="@id/groupMembersFragment" />
     </fragment>
+
     <fragment
         android:id="@+id/groupMembersFragment"
         android:name="com.example.munch_cmpt362.ui.group.GroupMembersFragment"

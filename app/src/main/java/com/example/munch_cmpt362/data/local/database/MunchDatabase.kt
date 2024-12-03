@@ -23,7 +23,7 @@ import munch_cmpt362.database.users.*
     PendingProfileUpdate::class,
     UserEntry::class, GroupEntry::class,
     GroupUserCrossRef::class
-),version = 3)
+),version = 4)
 @TypeConverters(Converters::class)
 // Telling the db to use a specific type of conversion method:
 abstract class MunchDatabase : RoomDatabase() {
@@ -52,7 +52,11 @@ abstract class MunchDatabase : RoomDatabase() {
                     MunchDatabase::class.java,
                     "munch_database"
                 )
-                    .addMigrations(DatabaseMigrations.MIGRATION_1_2) // Add migration
+                    .addMigrations(
+                        DatabaseMigrations.MIGRATION_1_2,
+                        DatabaseMigrations.MIGRATION_2_3,
+                        DatabaseMigrations.MIGRATION_3_4  // Add new migration
+                    )
                     .build()
                 INSTANCE = instance
                 instance

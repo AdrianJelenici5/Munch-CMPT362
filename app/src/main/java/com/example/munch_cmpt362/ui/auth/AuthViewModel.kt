@@ -22,6 +22,13 @@ class AuthViewModel @Inject constructor(
     private val _registerResult = MutableLiveData<Result<Unit>>()
     val registerResult: LiveData<Result<Unit>> = _registerResult
 
+    private val _userDetailsResult = MutableLiveData<Result<Unit>>()
+    val userDetailsResult: LiveData<Result<Unit>> = _userDetailsResult
+
+    private val _googleSignInResult = MutableLiveData<Result<Unit>>()
+    val googleSignInResult: LiveData<Result<Unit>> = _googleSignInResult
+
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             try {
@@ -49,6 +56,22 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun createUserProfile(username: String, name: String) {
+        viewModelScope.launch {
+            try {
+                _userDetailsResult.value = authRepository.createUserProfile(username, name)
+            } catch (e: Exception) {
+                _userDetailsResult.value = Result.failure(e)
+            }
+        }
+    }
+
+    fun handleGoogleSignIn(idToken: String) {
+        viewModelScope.launch {
+            _googleSignInResult.value = authRepository.signInWithGoogle(idToken)
+        }
+    }
+
     fun logout() {
         authRepository.logout()
     }
@@ -56,4 +79,6 @@ class AuthViewModel @Inject constructor(
     fun returnID(): FirebaseUser? {
         return authRepository.currentUser
     }
+
+    fun getCurrentUser(): FirebaseUser? = authRepository.currentUser
 }

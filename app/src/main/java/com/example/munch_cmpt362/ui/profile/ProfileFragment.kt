@@ -2,6 +2,7 @@ package com.example.munch_cmpt362.ui.profile
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -15,10 +16,12 @@ import com.bumptech.glide.Glide
 import com.example.munch_cmpt362.R
 import com.example.munch_cmpt362.data.local.entity.UserProfileEntity
 import com.example.munch_cmpt362.databinding.FragmentProfileBinding
+import com.example.munch_cmpt362.util.PhotoUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import java.io.FileOutputStream
+
 
 @AndroidEntryPoint
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
@@ -27,11 +30,108 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private val binding get() = _binding!!
     private val viewModel: ProfileViewModel by viewModels()
 
-    private val getContent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private var currentPhotoFile: File? = null
+    private var isUploadingPhoto = false
+
+    // Register for camera result
+    private val takePicture = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                handleImageSelection(uri)
+            currentPhotoFile?.let { file ->
+                if (file.exists() && file.length() > 0) {
+                    handleImageFile(file)
+                } else {
+                    showToast("Error: Camera image not saved")
+                }
             }
+        }
+    }
+
+    // Register for gallery result
+    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { handleGalleryImage(it) }
+    }
+
+    private fun showPhotoSelectionDialog() {
+        if (isUploadingPhoto) {
+            showToast("Please wait for the current upload to complete")
+            return
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Change Profile Picture")
+            .setItems(arrayOf("Take Photo", "Choose from Gallery")) { _, which ->
+                when (which) {
+                    0 -> launchCamera()
+                    1 -> launchGallery()
+                }
+            }
+            .show()
+    }
+
+    private fun launchCamera() {
+        if (PhotoUtils.checkAndRequestCameraPermission(requireActivity())) {
+            try {
+                currentPhotoFile = PhotoUtils.createImageFile(requireContext())
+                currentPhotoFile?.let { file ->
+                    val intent = PhotoUtils.getCameraIntent(requireContext(), file)
+                    takePicture.launch(intent)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error launching camera", e)
+                showToast("Error launching camera")
+            }
+        }
+    }
+
+    private fun launchGallery() {
+        if (PhotoUtils.checkAndRequestGalleryPermission(requireActivity())) {
+            try {
+                pickImage.launch("image/*")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error launching gallery", e)
+                showToast("Error opening gallery")
+            }
+        }
+    }
+
+    private fun handleGalleryImage(uri: Uri) {
+        try {
+            val tempFile = PhotoUtils.createImageFile(requireContext())
+            requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            handleImageFile(tempFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling gallery image", e)
+            showToast("Error processing selected image")
+        }
+    }
+
+    private fun handleImageFile(file: File) {
+        if (isUploadingPhoto) return
+
+        isUploadingPhoto = true
+        showUploadingIndicator(true)
+
+        // Direct call to viewModel.uploadProfilePicture without trying to observe it
+        viewModel.uploadProfilePicture(file)
+    }
+
+    private fun showUploadingIndicator(show: Boolean) {
+        binding.progressIndicator.visibility = if (show) View.VISIBLE else View.GONE
+        binding.fabChangePhoto.isEnabled = !show
+    }
+
+    private fun loadProfilePicture(url: String?) {
+        binding.ivProfile.let { imageView ->
+            Glide.with(requireContext())
+                .load(url ?: R.drawable.ic_profile_placeholder)
+                .placeholder(R.drawable.ic_profile_placeholder)
+                .error(R.drawable.ic_profile_placeholder)
+                .circleCrop()
+                .into(imageView)
         }
     }
 
@@ -48,8 +148,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         binding.apply {
             // Image selection
             fabChangePhoto.setOnClickListener {
-                showToast("Selecting profile picture...")
-                launchImagePicker()
+                showPhotoSelectionDialog()
             }
 
             // Radius slider
@@ -86,43 +185,37 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         with(viewModel) {
             // Profile state observer
             profileState.observe(viewLifecycleOwner) { result ->
-                try {
-                    result.fold(
-                        onSuccess = { profile ->
-                            Log.d(TAG, "Profile loaded successfully: $profile")
-                            updateUIWithProfile(profile)
-                        },
-                        onFailure = { exception ->
-                            handleProfileError(exception)
-                        }
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error in profile observer", e)
-                    handleProfileError(e)
-                }
-            }
-
-            // Update result observer
-            updateResult.observe(viewLifecycleOwner) { result ->
+                Log.d(TAG, "Profile state updated: $result")
                 result.fold(
-                    onSuccess = {
-                        loadUserProfile() // Reload profile after successful update
+                    onSuccess = { profile ->
+                        Log.d(TAG, "Profile loaded successfully: $profile")
+                        updateUIWithProfile(profile)
                     },
                     onFailure = { exception ->
-                        showToast("Failed to update profile: ${exception.message}")
+                        Log.e(TAG, "Profile loading failed", exception)
+                        handleProfileError(exception)
+                        // If it's an authentication error, reload the profile after a delay
+                        if (exception.message?.contains("No authenticated user") == true) {
+                            view?.postDelayed({
+                                loadUserProfile()
+                            }, 1000)
+                        }
                     }
                 )
             }
 
-            // Upload result observer
             uploadResult.observe(viewLifecycleOwner) { result ->
                 result.fold(
                     onSuccess = { url ->
                         showToast("Profile picture updated successfully")
                         loadUserProfile() // Reload profile to show new picture
+                        isUploadingPhoto = false
+                        showUploadingIndicator(false)
                     },
                     onFailure = { exception ->
                         showToast("Failed to upload profile picture: ${exception.message}")
+                        isUploadingPhoto = false
+                        showUploadingIndicator(false)
                     }
                 )
             }
@@ -132,22 +225,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
-    private fun loadProfilePicture(url: String?) {
-        try {
-            binding.ivProfile.let { imageView ->
-                Glide.with(requireContext())
-                    .load(url ?: R.drawable.ic_profile_placeholder)
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
-                    .circleCrop()
-                    .into(imageView)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading profile picture", e)
-            // Load placeholder on error
-            binding.ivProfile.setImageResource(R.drawable.ic_profile_placeholder)
-        }
-    }
+
 
     private fun handleProfileError(exception: Throwable) {
         Log.e(TAG, "Error loading profile", exception)
@@ -201,16 +279,13 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     override fun onResume() {
         super.onResume()
-        // Refresh profile data when returning to the fragment
-        viewModel.loadUserProfile()
+        Log.d(TAG, "ProfileFragment resumed, loading profile")
+        // Add a small delay to ensure authentication is complete
+        view?.postDelayed({
+            viewModel.loadUserProfile()
+        }, 500)
     }
 
-    private fun launchImagePicker() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            type = "image/*"
-        }
-        getContent.launch(intent)
-    }
 
     private fun handleImageSelection(uri: Uri) {
         try {
@@ -235,6 +310,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private fun updateUIWithProfile(profile: UserProfileEntity) {
         try {
             binding.apply {
+                tvUsername.text = "@${profile.username}"
                 // Basic info
                 etName.setText(profile.name)
                 etBio.setText(profile.bio)
@@ -246,7 +322,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 } catch (e: Exception) {
                     Log.e(TAG, "Error setting radius", e)
                     // Set default values if there's an error
-                    radiusSlider.value = 25f
+                    radiusSlider.value = 5f
                     tvRadiusValue.text = "25 km"
                 }
 

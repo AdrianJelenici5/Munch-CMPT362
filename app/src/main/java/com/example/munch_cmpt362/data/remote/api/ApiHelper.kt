@@ -13,10 +13,13 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiHelper {
+    private const val TAG = "ApiHelper"
+    private const val MAX_RADIUS_METERS = 40000
 
     fun callYelpNearbyRestaurantsApi(
         latitude: Double,
         longitude: Double,
+        radius: Int,
         onResult: (YelpResponse?) -> Unit
     ) {
         // Configure OkHttpClient with a logging interceptor
@@ -25,6 +28,11 @@ object ApiHelper {
         }.apply {
             level = HttpLoggingInterceptor.Level.BODY // Logs request and response body
         }
+
+        // Ensure radius doesn't exceed Yelp's maximum
+        val validRadius = radius.coerceAtMost(MAX_RADIUS_METERS)
+
+        Log.d(TAG, "Calling Yelp API with radius: ${validRadius}m")
 
         val client = OkHttpClient.Builder()
 //            .addInterceptor(loggingInterceptor) // Add the interceptor
@@ -38,8 +46,13 @@ object ApiHelper {
             .build()
 
         val service = retrofit.create(YelpService::class.java)
-        val call = service.getNearbyRestaurants("Bearer ${BuildConfig.YELP_API_KEY}", latitude, longitude)
-
+        val call = service.getNearbyRestaurants(
+            authHeader = "Bearer ${BuildConfig.YELP_API_KEY}",
+            latitude = latitude,
+            longitude = longitude,
+            radius = validRadius,
+            term = "restaurant"
+        )
         call.enqueue(object : Callback<YelpResponse> {
             override fun onResponse(call: Call<YelpResponse>, response: Response<YelpResponse>) {
                 if (response.isSuccessful) {

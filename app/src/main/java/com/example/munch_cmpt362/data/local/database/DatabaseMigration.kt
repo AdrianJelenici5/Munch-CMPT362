@@ -49,4 +49,13 @@ object DatabaseMigrations {
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_profile_updates_userId` ON `pending_profile_updates` (`userId`)")
         }
     }
+
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            // Add username column to user_profiles table
+            database.execSQL(
+                "ALTER TABLE user_profiles ADD COLUMN username TEXT NOT NULL DEFAULT ''"
+            )
+        }
+    }
 }
